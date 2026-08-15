@@ -1,0 +1,25 @@
+# Environment & Confidential Configuration
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build artifacts & temp
+dist/
+build/
+tmp/

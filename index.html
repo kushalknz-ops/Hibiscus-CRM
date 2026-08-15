@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hibiscus Coast Panel Beaters — Liquid Glass CRM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Google Fonts: Inter / SF-style typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client SDK v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- WebGL Shader Background (fixed behind all content) -->
+  <div id="shader-bg-container"></div>
+
+  <!-- Liquid Glass SVG Refraction Filter -->
+  <svg style="display: none;">
+    <defs>
+      <filter id="container-glass" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="1" seed="1" result="turbulence" />
+        <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise" />
+        <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="40" xChannelSelector="R" yChannelSelector="B" result="displaced" />
+        <feGaussianBlur in="displaced" stdDeviation="3" result="finalBlur" />
+        <feComposite in="finalBlur" in2="finalBlur" operator="over" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="app" class="app-layout">
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Apple-style Glass Navigation Bar -->
+      <header class="top-nav">
+        <div class="top-nav-left">
+          <!-- Brand Logo & Title -->
+          <div class="top-brand">
+            <div class="brand-avatar">
+              <img src="Logo-120.png" alt="Hibiscus Coast Logo" style="width:100%; height:100%; object-fit:contain;">
+            </div>
+            <div class="brand-info">
+              <h2>Hibiscus Coast</h2>
+              <p>Panel Beaters CRM</p>
+            </div>
+          </div>
+
+          <div class="top-nav-divider"></div>
+
+          <!-- Workspace Function Tabs -->
+          <nav class="top-nav-menu">
+            <button class="nav-item active" data-view="dashboard">
+              <i data-lucide="layout-grid"></i>
+              <span>Dashboard</span>
+              <span class="badge" id="badgeTotalCalls">1</span>
+            </button>
+            <button class="nav-item" data-view="call-logs">
+              <i data-lucide="phone-call"></i>
+              <span>Call Logs & Audio</span>
+              <span class="badge pulse" id="badgeCalls">AI Live</span>
+            </button>
+            <button class="nav-item" data-view="appointments">
+              <i data-lucide="calendar"></i>
+              <span>Inspection Schedule</span>
+              <span class="badge" id="badgeAppts">1</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="top-nav-right">
+          <!-- Quick Search bar -->
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search rego, customer, phone, service..." />
+            <kbd>⌘K</kbd>
+          </div>
+
+          <!-- Liquid Glass Action Icon Button -->
+          <button class="liquid-glass-btn icon-only" id="btnRefreshOmniData" title="Fetch latest call data">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+
+          <div class="top-nav-divider"></div>
+
+          <!-- User Profile & Dropdown -->
+          <div class="top-user-profile" id="topUserProfile" onclick="app.toggleUserDropdown(event)">
+            <div class="user-avatar" id="userAvatarText">S</div>
+            <div class="user-info">
+              <div class="user-name" id="userNameText">Santu (Director)</div>
+              <div class="user-role" id="userRoleBadge">Hibiscus Coast</div>
+            </div>
+            <i data-lucide="chevron-down" style="width:14px; height:14px; color:var(--text-secondary); margin-left:4px;"></i>
+
+            <!-- Dropdown Menu -->
+            <div class="user-dropdown-menu" id="userDropdownMenu" style="display: none;">
+              <div class="dropdown-header">
+                <strong id="dropdownUserEmail">santu@hibiscus.co.nz</strong>
+                <span class="role-pill director" id="dropdownRolePill">Director • Full Access</span>
+              </div>
+              <button class="dropdown-item danger" onclick="app.handleLogout()">
+                <i data-lucide="log-out"></i>
+                <span>Log Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic Views Container -->
+      <div class="view-viewport">
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="content-view active">
+          <!-- Metric Highlights Grid -->
+          <div class="metrics-grid-2col">
+            <div class="metric-card glass-card">
+              <div class="metric-icon-wrap blue">
+                <i data-lucide="phone-incoming"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Total Calls Handled</span>
+                <div class="metric-value-row">
+                  <span class="metric-number" id="kpiTotalCalls">1</span>
+                  <span class="metric-badge positive">AI Live Reception</span>
+                </div>
+                <span class="metric-subtext">your AI working for your business.</span>
+              </div>
+            </div>
+
+            <div class="metric-card glass-card">
+              <div class="metric-icon-wrap emerald">
+                <i data-lucide="calendar-check"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Inspections Booked</span>
+                <div class="metric-value-row">
+                  <span class="metric-number" id="kpiBookedAppts">1</span>
+                  <span class="metric-badge positive">Google Calendar Synced</span>
+                </div>
+                <span class="metric-subtext">681 Whangaparaoa Rd Visual Damage Assessments</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUTOMATED CALL SEPARATION TECHNIQUE (Service Requested Extraction Hub) -->
+          <div class="service-separation-section glass-card">
+            <div class="separation-header">
+              <div class="sep-title-wrap">
+                <div class="sep-icon"><i data-lucide="layers"></i></div>
+                <div>
+                  <h3>Automated Call Service Separation Hub</h3>
+                </div>
+              </div>
+              <div class="separation-tabs" id="serviceCategoryTabs">
+                <button class="sep-tab-btn active" data-service="all">All Services (<span id="count-all-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="wof">WOF Rust & Compliance (<span id="count-wof-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="insurance">Insurance Claim Jobs (<span id="count-insurance-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="private">Private Repair Quotes (<span id="count-private-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="courtesy">Courtesy Car / Fleet (<span id="count-courtesy-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="status">Repair Status Tracking (<span id="count-status-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="detailing">Grooming & Valet (<span id="count-detailing-services">0</span>)</button>
+                <button class="sep-tab-btn" data-service="spam">Spam / Out-of-Scope (<span id="count-spam-services">0</span>)</button>
+              </div>
+            </div>
+
+            <!-- Dynamic Separated Job Cards Grid -->
+            <div class="separated-jobs-grid" id="separatedJobsContainer">
+              <!-- Rendered via JS based on extracted service_requested -->
+            </div>
+          </div>
+
+          <!-- 2-Column Layout: Recent Inbound Calls & Today's Schedule -->
+          <div class="dashboard-split-grid">
+            <!-- Left: Real OmniDimension Calls -->
+            <div class="glass-card table-panel">
+              <div class="panel-header">
+                <div class="panel-title-wrap">
+                  <h3>Recent AI Inbound Calls</h3>
+                  <p>Turn-by-turn voice interactions with audio recordings & extracted variables</p>
+                </div>
+                <button class="panel-link-btn" onclick="app.switchView('call-logs')">View All Calls →</button>
+              </div>
+              <div class="table-container">
+                <table class="apple-table">
+                  <thead>
+                    <tr>
+                      <th>Date / Time</th>
+                      <th>Caller / Customer</th>
+                      <th>Phone</th>
+                      <th>Rego Plate</th>
+                      <th>Extracted Service</th>
+                      <th>Sentiment</th>
+                      <th>Audio</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardRecentCallsBody">
+                    <!-- Populated via JS from OmniDimension data -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Today's Visual Assessment Schedule -->
+            <div class="glass-card table-panel">
+              <div class="panel-header">
+                <div class="panel-title-wrap">
+                  <h3>Inspection Schedule Preview</h3>
+                  <p>681 Whangaparaoa Rd • 15-min assessment slots</p>
+                </div>
+                <button class="panel-link-btn" onclick="app.switchView('appointments')">Full Week View →</button>
+              </div>
+              <div class="appointment-cards-list" id="dashboardUpcomingAppts">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. CALL LOGS & AUDIO PLAYER VIEW -->
+        <section id="view-call-logs" class="content-view">
+          <div class="view-header-bar">
+            <div>
+              <h2>AI Live Call Records & Recordings</h2>
+              <p>Listen to actual voice recordings, inspect extracted variables, and review full dialogues.</p>
+            </div>
+            <div class="view-actions">
+              <!-- Filter Segmented Control -->
+              <div class="segmented-control" id="callStatusFilter">
+                <button class="seg-item active" data-filter="all">All Calls</button>
+                <button class="seg-item" data-filter="wof">WOF Rust</button>
+                <button class="seg-item" data-filter="insurance">Insurance Claim</button>
+                <button class="seg-item" data-filter="private">Private Quote</button>
+                <button class="seg-item" data-filter="completed">Completed</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="call-logs-container glass-card">
+            <div class="logs-filter-bar">
+              <div class="filter-search">
+                <i data-lucide="search"></i>
+                <input type="text" id="callLogSearchInput" placeholder="Filter by name, phone, plate number, service..." />
+              </div>
+              <div class="filter-stats">
+                <span id="callLogCountDisplay">Showing 0 calls</span>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table class="apple-table">
+                <thead>
+                  <tr>
+                    <th>Listen</th>
+                    <th>Call ID & Time</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Rego Plate</th>
+                    <th>Service Requested</th>
+                    <th>Preferred Slot</th>
+                    <th>Inspect</th>
+                  </tr>
+                </thead>
+                <tbody id="fullCallLogsTableBody">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. INSPECTION SCHEDULE VIEW (Day View + Full Week View) -->
+        <section id="view-appointments" class="content-view">
+          <div class="view-header-bar">
+            <div>
+              <h2>Damage Inspection Calendar</h2>
+              <p>Hours: Mon–Fri 7:30am–5:00pm, Sat 8:00am–12:00pm, Sun & public holidays CLOSED (strict, no exceptions).</p>
+            </div>
+            <div class="view-actions">
+              <div class="cal-view-selector" id="calendarViewModeSelector">
+                <button class="seg-mini-btn active" data-calview="day">Day View</button>
+                <button class="seg-mini-btn" data-calview="week">Week View</button>
+              </div>
+              <div class="cal-nav-buttons">
+                <button class="icon-btn" id="btnPrevCalPeriod" title="Previous"><i data-lucide="chevron-left"></i></button>
+                <button class="seg-mini-btn" id="btnTodayCal">Today</button>
+                <button class="icon-btn" id="btnNextCalPeriod" title="Next"><i data-lucide="chevron-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- DAY VIEW CONTAINER -->
+          <div id="calendarDayViewContainer" class="calendar-layout-grid">
+            <div class="glass-card calendar-main-panel">
+              <div class="cal-controls-bar">
+                <div class="cal-date-title">
+                  <h3 id="currentCalDateTitle">Today • Friday, 14 August 2026</h3>
+                  <span class="pill-badge green" id="shopHoursBadge">Mon–Fri 7:30am–5:00pm | Sat 8:00am–12:00pm</span>
+                </div>
+              </div>
+              <div class="time-slots-list" id="calendarDayTimeSlotsList">
+                <!-- Day view slots -->
+              </div>
+            </div>
+
+            <div class="calendar-sidebar-panel">
+              <div class="glass-card info-card">
+                <h4><i data-lucide="map-pin"></i> Inspection Location</h4>
+                <p><strong>Hibiscus Coast Panel Beaters</strong></p>
+                <p>681 Whangaparaoa Road, Stanmore Bay, Whangaparaoa 0932</p>
+                <div class="divider"></div>
+                <h4><i data-lucide="info"></i> Assessment Protocol</h4>
+                <ul class="checklist">
+                  <li>WOF structural rust compliance inspection</li>
+                  <li>Insurance digital claim photos & damage quote</li>
+                  <li>15-minute fast turnaround slot</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- WEEK VIEW CONTAINER -->
+          <div id="calendarWeekViewContainer" class="glass-card week-calendar-wrapper" style="display: none;">
+            <div class="week-calendar-header-bar">
+              <div class="week-title-wrap">
+                <h3 id="currentWeekRangeTitle">Week of 10 August - 16 August 2026</h3>
+                <span class="pill-badge blue">Monday – Saturday Operations</span>
+              </div>
+            </div>
+
+            <div class="week-grid-container">
+              <!-- Column headers: Time + 6 Days (Mon-Sat) -->
+              <div class="week-grid-header">
+                <div class="week-col-header time-col">Time</div>
+                <div class="week-col-header" id="wh-mon"><span class="day-name">Mon</span><span class="day-num">10 Aug</span></div>
+                <div class="week-col-header" id="wh-tue"><span class="day-name">Tue</span><span class="day-num">11 Aug</span></div>
+                <div class="week-col-header" id="wh-wed"><span class="day-name">Wed</span><span class="day-num">12 Aug</span></div>
+                <div class="week-col-header" id="wh-thu"><span class="day-name">Thu</span><span class="day-num">13 Aug</span></div>
+                <div class="week-col-header current-today" id="wh-fri"><span class="day-name">Fri (Today)</span><span class="day-num">14 Aug</span></div>
+                <div class="week-col-header" id="wh-sat"><span class="day-name">Sat</span><span class="day-num">15 Aug</span></div>
+              </div>
+
+              <!-- Time Rows Grid -->
+              <div class="week-grid-body" id="weekGridBody">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- SLIDE-OVER CALL INSPECTION DRAWER (Apple Sheet Design) -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <aside class="slide-sheet" id="callDetailSheet">
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-badge" id="sheetBadge">Call Record #6601441</span>
+        <h3 id="sheetCallerName">Kushal Gupa (0225552515)</h3>
+      </div>
+      <button class="sheet-close-btn" id="closeDetailSheetBtn" onclick="app.closeDetailSheet()" title="Close Panel">
+        <i data-lucide="x" style="width:16px; height:16px;"></i>
+      </button>
+    </div>
+
+    <!-- Slide-over Body -->
+    <div class="sheet-body">
+      <!-- Voice Audio Player Box -->
+      <div class="audio-player-card">
+        <div class="audio-header">
+          <span class="audio-source-badge">
+            <i data-lucide="radio"></i>
+            <span>Voice Recording Stream</span>
+          </span>
+          <span class="audio-source-badge" id="sheetAudioStatus">Ready</span>
+        </div>
+        
+        <div class="player-controls-row">
+          <button class="play-pause-btn" id="sheetAudioPlayBtn" title="Play Recording">
+            <i data-lucide="play" id="sheetPlayIcon"></i>
+          </button>
+          
+          <div class="audio-scrubber-wrap">
+            <div class="audio-waveform" id="sheetWaveform">
+              <div class="wave-bar" style="height: 35%"></div>
+              <div class="wave-bar" style="height: 60%"></div>
+              <div class="wave-bar" style="height: 85%"></div>
+              <div class="wave-bar" style="height: 50%"></div>
+              <div class="wave-bar" style="height: 95%"></div>
+              <div class="wave-bar" style="height: 70%"></div>
+              <div class="wave-bar" style="height: 45%"></div>
+              <div class="wave-bar" style="height: 80%"></div>
+              <div class="wave-bar" style="height: 100%"></div>
+              <div class="wave-bar" style="height: 65%"></div>
+              <div class="wave-bar" style="height: 40%"></div>
+              <div class="wave-bar" style="height: 75%"></div>
+              <div class="wave-bar" style="height: 90%"></div>
+              <div class="wave-bar" style="height: 55%"></div>
+              <div class="wave-bar" style="height: 30%"></div>
+            </div>
+            <div class="time-display-row">
+              <span id="audioCurrentTime">00:00</span>
+              <span id="audioTotalDuration">02:03</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden Native HTML5 Audio for streaming recording URL -->
+        <audio id="nativeAudioElement" preload="metadata"></audio>
+      </div>
+
+      <!-- AI EXTRACTED VARIABLES (OmniDimension Real Variables) -->
+      <div class="sheet-section">
+        <h4 class="section-heading"><i data-lucide="sparkles"></i> Extracted AI Parameters</h4>
+        <div class="entity-grid">
+          <div class="entity-item">
+            <span class="entity-label">Service Requested</span>
+            <strong class="entity-value" id="sheetService">WOF repairs</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Vehicle Rego Plate</span>
+            <strong class="entity-value" id="sheetRego">QPW438</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Contact Phone</span>
+            <strong class="entity-value" id="sheetPhone">0225552515</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Contact Email</span>
+            <strong class="entity-value" id="sheetEmail">kushalKNZ@gmail.com</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Preferred Date & Time</span>
+            <strong class="entity-value" id="sheetPreferredSlot">Today, 4 o'clock</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Urgency Level</span>
+            <strong class="entity-value" id="sheetUrgency">Medium</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Insurance Provider</span>
+            <strong class="entity-value" id="sheetInsurer">Not provided</strong>
+          </div>
+          <div class="entity-item">
+            <span class="entity-label">Claim Number</span>
+            <strong class="entity-value" id="sheetClaimNo">Not provided</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call Summary & Sentiment -->
+      <div class="sheet-section">
+        <h4 class="section-heading"><i data-lucide="file-text"></i> Call Summary & AI Analysis</h4>
+        <div class="call-summary-box" id="sheetSummaryText">
+          The user called to schedule a visual check for WOF repairs due to rust on their vehicle.
+        </div>
+      </div>
+
+      <!-- Full Turn-by-Turn Transcript -->
+      <div class="sheet-section">
+        <h4 class="section-heading"><i data-lucide="message-square"></i> Turn-by-Turn Dialogue Transcript</h4>
+        <div class="transcript-thread" id="sheetTranscriptThread">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-footer">
+      <button class="liquid-glass-btn" style="width:100%; justify-content:center;" id="sheetBookCalBtn" onclick="app.switchView('appointments'); app.closeDetailSheet();">
+        <div class="glass-shadow-overlay"></div>
+        <div class="glass-backdrop-filter"></div>
+        <div class="btn-content">
+          <i data-lucide="calendar" style="width:14px; height:14px;"></i>
+          <span>View In Calendar</span>
+        </div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- LIQUID GLASS AUTHENTICATION PORTAL (SUPABASE AUTH) -->
+  <div id="loginPortal" class="auth-overlay">
+    <div class="auth-card glass-card">
+      <div class="auth-header">
+        <div class="auth-brand-logo">
+          <img src="Logo-120.png" alt="Hibiscus Coast Panel Beaters Logo" />
+        </div>
+        <h2>Hibiscus Coast Panel Beaters</h2>
+        <p class="auth-subtitle">Authorized Management Portal</p>
+      </div>
+
+      <div class="auth-alert" id="loginErrorAlert" style="display: none;">
+        <i data-lucide="alert-triangle"></i>
+        <span id="loginErrorText">Invalid credentials. Please try again.</span>
+      </div>
+
+      <form id="loginForm" onsubmit="event.preventDefault(); app.handleLogin();">
+        <div class="auth-input-group">
+          <label for="authEmail"><i data-lucide="mail"></i> Email Address</label>
+          <div class="auth-input-wrapper">
+            <input type="email" id="authEmail" placeholder="Enter Email" required autocomplete="username" />
+          </div>
+        </div>
+
+        <div class="auth-input-group">
+          <label for="authPassword"><i data-lucide="lock"></i> Passcode / Password</label>
+          <div class="auth-input-wrapper">
+            <input type="password" id="authPassword" placeholder="Enter Password" required autocomplete="current-password" />
+            <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility()">
+              <i data-lucide="eye" id="passwordToggleIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="liquid-glass-btn auth-submit-btn" id="btnLoginSubmit">
+          <div class="glass-shadow-overlay"></div>
+          <div class="glass-backdrop-filter"></div>
+          <div class="btn-content">
+            <i data-lucide="key"></i>
+            <span id="loginBtnText">Sign In to CRM</span>
+          </div>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <span><i data-lucide="shield-check" style="width:12px; height:12px; vertical-align:middle;"></i> Protected by Supabase Auth & RLS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+
+  <!-- Three.js CDN + Shader Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="shader-bg.js"></script>
+</body>
+</html>
