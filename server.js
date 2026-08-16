@@ -34,7 +34,7 @@ let storedCalls = [
     contact_phone_number: '630455',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'QP3345',
-    vehicle_make_model_year: 'Subaru / WOF Structural Rust Damage',
+    vehicle_make_model_year: 'Subaru Outback 2018',
     service_requested: 'WOF repairs',
     preferred_date_time: 'Visual Check at 681 Whangaparaoa Rd',
     urgency_level: 'High',
@@ -69,7 +69,7 @@ let storedCalls = [
     contact_phone_number: '22555515',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'QPW 435',
-    vehicle_make_model_year: 'Subaru / Bumper Damage Repair',
+    vehicle_make_model_year: 'Subaru Impreza 2020',
     service_requested: 'Private Repair Quotes',
     preferred_date_time: 'Monday 17 Aug 2026, 01:00 PM',
     urgency_level: 'High',
@@ -102,7 +102,7 @@ let storedCalls = [
     contact_phone_number: '225555515',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'CLI-345',
-    vehicle_make_model_year: 'Subaru / Bumper Collision Repair',
+    vehicle_make_model_year: 'Subaru Forester 2019',
     service_requested: 'Private Repair Quotes',
     preferred_date_time: 'Monday 17 Aug 2026, 10:00 AM',
     urgency_level: 'High',
@@ -139,7 +139,7 @@ let storedCalls = [
     contact_phone_number: '0225552515',
     contact_email: 'kushalKNZ@gmail.com',
     vehicle_registration: 'QPW438',
-    vehicle_make_model_year: 'Toyota Corolla',
+    vehicle_make_model_year: 'Toyota Corolla 2017',
     service_requested: 'WOF repairs',
     preferred_date_time: 'Today, 4 o\'clock (14 Aug, 04:00 PM)',
     urgency_level: 'Medium',
@@ -166,7 +166,7 @@ let storedCalls = [
     contact_phone_number: '0225552515',
     contact_email: 'kushal.k@gmail.com',
     vehicle_registration: 'QPW-435',
-    vehicle_make_model_year: 'Rear Collision & Inner Trims Damage',
+    vehicle_make_model_year: 'Nissan X-Trail 2021',
     service_requested: 'Private Repair Quotes',
     preferred_date_time: 'Visual Damage Check at 681 Whangaparaoa Rd',
     urgency_level: 'High',
@@ -229,9 +229,20 @@ const server = http.createServer((req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
 
+  // Handle CORS Preflight for Webhooks
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+    });
+    res.end();
+    return;
+  }
+
   // Healthcheck Endpoint
   if (req.method === 'GET' && req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify({ status: 'ok', environment: process.env.NODE_ENV || 'production', timestamp: new Date().toISOString() }));
     return;
   }
@@ -243,50 +254,63 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Handle OmniDimension Webhook Ingestion
-  if (req.method === 'POST' && req.url === '/api/webhook/call-ended') {
+  // Handle OmniDimension Webhook Ingestion (Supports /api/webhook, /api/webhook/call-ended, /api/webhook/call_ended, /webhook)
+  if (req.method === 'POST' && (req.url.startsWith('/api/webhook') || req.url.startsWith('/webhook'))) {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
       try {
-        const payload = JSON.parse(body);
-        const report = payload.call_report || {};
-        const ext = report.extracted_variables || {};
+        const payload = JSON.parse(body || '{}');
+        console.log('[OmniDimension Webhook Received]:', JSON.stringify(payload).slice(0, 300));
+
+        const report = payload.call_report || payload.report || payload.data || {};
+        const ext = report.extracted_variables || payload.extracted_variables || {};
+
+        const callerName = ext.caller_full_name || payload.caller_name || payload.customer_name || 'Inbound Caller';
+        const phone = ext.contact_phone_number || payload.phone_number || payload.caller_phone || 'N/A';
+        const rego = ext.vehicle_registration || payload.rego || 'N/A';
+        const service = ext.service_requested || payload.service_requested || 'General Inquiry';
+        const preferredSlot = ext.preferred_date_time || payload.preferred_date_time || 'N/A';
 
         const newCall = {
-          id: payload.call_id || Date.now(),
-          time_of_call: payload.call_date || new Date().toISOString(),
+          id: payload.call_id || payload.id || Date.now(),
+          time_of_call: payload.call_date || payload.created_at || new Date().toISOString(),
           display_time: new Date().toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit', hour12: true }),
-          caller_full_name: ext.caller_full_name || 'Caller',
-          contact_phone_number: ext.contact_phone_number || payload.phone_number || 'N/A',
-          contact_email: ext.contact_email || 'Not provided',
-          vehicle_registration: ext.vehicle_registration || 'N/A',
+          caller_full_name: callerName,
+          contact_phone_number: phone,
+          contact_email: ext.contact_email || payload.email || 'Not provided',
+          vehicle_registration: rego,
           vehicle_make_model_year: ext.vehicle_make_model_year || 'Not provided',
-          service_requested: ext.service_requested || 'General Inquiry',
-          preferred_date_time: ext.preferred_date_time || 'N/A',
+          service_requested: service,
+          preferred_date_time: preferredSlot,
           urgency_level: ext.urgency_level || 'Normal',
           insurance_company: ext.insurance_company || 'Not provided',
           insurance_claim_number: ext.insurance_claim_number || 'Not provided',
           pickup_address: ext.pickup_address || 'Not provided',
           call_duration: payload.call_duration ? `${payload.call_duration}s` : '01:30',
           call_status: payload.call_status || 'completed',
-          sentiment_score: report.sentiment || 'Positive',
-          sentiment_summary: report.summary || 'Call processed by OmniDimension agent.',
+          sentiment_score: report.sentiment || payload.sentiment || 'Positive',
+          sentiment_summary: report.summary || payload.summary || 'Call processed by OmniDimension AI Receptionist.',
           recording_url: payload.recording_url || report.recording_url || '',
           internal_recording_url: payload.recording_url || report.recording_url || '',
-          interactions: (report.interactions || []).map(turn => ({
-            sequence: turn.sequence,
+          interactions: Array.isArray(report.interactions) ? report.interactions.map((turn, i) => ({
+            sequence: turn.sequence || i + 1,
             sender: turn.user_query ? 'caller' : 'agent',
-            name: turn.user_query ? ext.caller_full_name : 'Arna (AI)',
-            text: turn.user_query || turn.bot_response
-          }))
+            name: turn.user_query ? callerName : 'Arna (AI)',
+            text: turn.user_query || turn.bot_response || turn.text
+          })) : []
         };
 
-        storedCalls.unshift(newCall);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Call received and stored.' }));
+        // Avoid duplicate insertion
+        if (!storedCalls.some(c => String(c.id) === String(newCall.id))) {
+          storedCalls.unshift(newCall);
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ success: true, message: 'OmniDimension Webhook received and stored.', call_id: newCall.id }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
+        console.error('[Webhook Error]:', err);
+        res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ error: err.message }));
       }
     });

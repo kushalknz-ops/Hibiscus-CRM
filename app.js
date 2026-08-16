@@ -17,7 +17,7 @@ const OMNIDIMENSION_INITIAL_CALLS = [
     contact_phone_number: '630455',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'QP3345',
-    vehicle_make_model_year: 'Subaru / WOF Structural Rust Damage',
+    vehicle_make_model_year: 'Subaru Outback 2018',
     service_requested: 'WOF repairs',
     service_category: 'wof',
     preferred_date_time: 'Visual Check at 681 Whangaparaoa Rd',
@@ -53,7 +53,7 @@ const OMNIDIMENSION_INITIAL_CALLS = [
     contact_phone_number: '22555515',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'QPW 435',
-    vehicle_make_model_year: 'Subaru / Bumper Damage Repair',
+    vehicle_make_model_year: 'Subaru Impreza 2020',
     service_requested: 'Private Repair Quotes',
     service_category: 'private',
     preferred_date_time: 'Monday 17 Aug 2026, 01:00 PM',
@@ -87,7 +87,7 @@ const OMNIDIMENSION_INITIAL_CALLS = [
     contact_phone_number: '225555515',
     contact_email: 'neeraj007@gmail.com',
     vehicle_registration: 'CLI-345',
-    vehicle_make_model_year: 'Subaru / Bumper Collision Repair',
+    vehicle_make_model_year: 'Subaru Forester 2019',
     service_requested: 'Private Repair Quotes',
     service_category: 'private',
     preferred_date_time: 'Monday 17 Aug 2026, 10:00 AM',
@@ -125,7 +125,7 @@ const OMNIDIMENSION_INITIAL_CALLS = [
     contact_phone_number: '0225552515',
     contact_email: 'kushalKNZ@gmail.com',
     vehicle_registration: 'QPW438',
-    vehicle_make_model_year: 'Toyota Corolla',
+    vehicle_make_model_year: 'Toyota Corolla 2017',
     service_requested: 'WOF repairs',
     service_category: 'wof',
     preferred_date_time: 'Today, 4 o\'clock (14 Aug, 04:00 PM)',
@@ -580,6 +580,7 @@ class HibiscusCRM {
           </div>
 
           <div class="job-details-snippet">
+            ${c.vehicle_make_model_year && c.vehicle_make_model_year !== 'Not provided' ? `<strong>Vehicle:</strong> ${c.vehicle_make_model_year}<br/>` : ''}
             <strong>Preferred Slot:</strong> ${c.preferred_date_time || 'Not specified'}<br/>
             ${c.insurance_company !== 'Not provided' ? `<strong>Insurer:</strong> ${c.insurance_company}` : `<strong>Urgency:</strong> ${c.urgency_level || 'Normal'}`}
           </div>
@@ -1104,6 +1105,12 @@ class HibiscusCRM {
     document.getElementById('sheetCallerName').textContent = `${call.caller_full_name} (${call.contact_phone_number})`;
     document.getElementById('sheetService').textContent = call.service_requested || 'WOF repairs';
     document.getElementById('sheetRego').textContent = call.vehicle_registration || 'QPW438';
+    const vehicleEl = document.getElementById('sheetVehicleDetails');
+    let cleanVehicle = call.vehicle_make_model_year || 'Not provided';
+    if (cleanVehicle.includes('/') && !cleanVehicle.includes('20')) {
+      cleanVehicle = cleanVehicle.split('/')[0].trim();
+    }
+    if (vehicleEl) vehicleEl.textContent = cleanVehicle;
     document.getElementById('sheetPhone').textContent = call.contact_phone_number || '0225552515';
     document.getElementById('sheetEmail').textContent = call.contact_email || 'Not provided';
     document.getElementById('sheetPreferredSlot').textContent = call.preferred_date_time || 'Today, 4 o\'clock';
