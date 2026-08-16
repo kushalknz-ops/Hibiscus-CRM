@@ -392,13 +392,49 @@ class HibiscusCRM {
 
     // Keyboard shortcut Cmd+K
     window.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        const input = document.getElementById('globalSearchInput');
-        if (input) input.focus();
+      if (e.key === 'Escape') {
+        this.closeDetailSheet();
+        this.closeMobileNav();
       }
-      if (e.key === 'Escape') this.closeDetailSheet();
     });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1024) {
+        this.closeMobileNav();
+      }
+    });
+  }
+
+  toggleMobileNav() {
+    const menu = document.getElementById('topNavMenu');
+    const backdrop = document.getElementById('mobileNavBackdrop');
+    if (menu) menu.classList.toggle('mobile-open');
+    if (backdrop) backdrop.classList.toggle('active');
+  }
+
+  closeMobileNav() {
+    const menu = document.getElementById('topNavMenu');
+    const backdrop = document.getElementById('mobileNavBackdrop');
+    if (menu) menu.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
+  toggleMobileSearch(e) {
+    if (window.innerWidth <= 768) {
+      const searchBox = document.getElementById('globalSearchBox');
+      const searchInput = document.getElementById('globalSearchInput');
+      if (searchBox) {
+        searchBox.classList.toggle('mobile-expanded');
+        if (searchBox.classList.contains('mobile-expanded') && searchInput) {
+          setTimeout(() => searchInput.focus(), 100);
+        }
+      }
+    }
+  }
+
+  closeMobileSearch() {
+    const searchBox = document.getElementById('globalSearchBox');
+    if (searchBox) searchBox.classList.remove('mobile-expanded');
   }
 
   switchView(viewName) {
@@ -418,6 +454,8 @@ class HibiscusCRM {
     const titleEl = document.getElementById('currentViewTitle');
     if (titleEl) titleEl.textContent = titles[viewName] || 'Overview';
 
+    this.closeMobileNav();
+    this.closeMobileSearch();
     if (window.lucide) window.lucide.createIcons();
   }
 
@@ -540,13 +578,13 @@ class HibiscusCRM {
       const cat = this.categorizeService(c.service_requested);
       return `
         <tr onclick="app.openDetailSheet('${c.id}')" style="cursor: pointer;">
-          <td><strong style="color:#FFFFFF;">${c.display_time || c.time_of_call}</strong></td>
-          <td><strong>${c.caller_full_name}</strong></td>
-          <td><span style="font-family:monospace;">${c.contact_phone_number}</span></td>
-          <td><span style="font-weight:800; background:var(--bg-pill); padding:2px 7px; border-radius:4px;">${c.vehicle_registration}</span></td>
-          <td><span class="job-service-tag ${cat}">${c.service_requested}</span></td>
-          <td><span class="status-pill green">${c.sentiment_score || 'Positive'}</span></td>
-          <td>
+          <td data-label="Date / Time"><strong style="color:#FFFFFF;">${c.display_time || c.time_of_call}</strong></td>
+          <td data-label="Caller"><strong style="color:#FFFFFF;">${c.caller_full_name}</strong></td>
+          <td data-label="Phone"><span style="font-family:monospace;">${c.contact_phone_number}</span></td>
+          <td data-label="Rego Plate"><span style="font-weight:800; background:var(--bg-pill); padding:2px 7px; border-radius:4px;">${c.vehicle_registration}</span></td>
+          <td data-label="Extracted Service"><span class="job-service-tag ${cat}">${c.service_requested}</span></td>
+          <td data-label="Sentiment"><span class="status-pill green">${c.sentiment_score || 'Positive'}</span></td>
+          <td data-label="Audio Play">
             <button class="play-mini-btn" id="mini-play-${c.id}" onclick="event.stopPropagation(); app.toggleMiniAudio('${c.id}');">
               <i data-lucide="${this.isPlayingAudio && String(this.currentPlayingCallId) === String(c.id) ? 'pause' : 'play'}" style="width:14px; height:14px;"></i>
             </button>
@@ -604,21 +642,21 @@ class HibiscusCRM {
 
     tbody.innerHTML = filtered.map(c => `
       <tr onclick="app.openDetailSheet('${c.id}')" style="cursor: pointer;">
-        <td>
+        <td data-label="Audio Play">
           <button class="play-mini-btn" id="call-log-play-${c.id}" onclick="event.stopPropagation(); app.toggleMiniAudio('${c.id}');">
             <i data-lucide="${this.isPlayingAudio && String(this.currentPlayingCallId) === String(c.id) ? 'pause' : 'play'}" style="width:14px; height:14px;"></i>
           </button>
         </td>
-        <td>
-          <strong>#${c.id}</strong>
+        <td data-label="Call ID / Date">
+          <strong style="color:#FFFFFF;">#${c.id}</strong>
           <div style="font-size:0.72rem; color:var(--text-secondary);">${c.display_time || c.time_of_call}</div>
         </td>
-        <td><strong>${c.caller_full_name}</strong></td>
-        <td><span style="font-family:monospace;">${c.contact_phone_number}</span></td>
-        <td><span style="font-weight:800; background:var(--bg-pill); padding:2px 7px; border-radius:4px;">${c.vehicle_registration}</span></td>
-        <td><span class="job-service-tag ${this.categorizeService(c.service_requested)}">${c.service_requested}</span></td>
-        <td><strong>${this.formatPreferredSlot(c.preferred_date_time)}</strong></td>
-        <td>
+        <td data-label="Caller Name"><strong>${c.caller_full_name}</strong></td>
+        <td data-label="Phone Number"><span style="font-family:monospace;">${c.contact_phone_number}</span></td>
+        <td data-label="Rego Plate"><span style="font-weight:800; background:var(--bg-pill); padding:2px 7px; border-radius:4px;">${c.vehicle_registration}</span></td>
+        <td data-label="Extracted Service"><span class="job-service-tag ${this.categorizeService(c.service_requested)}">${c.service_requested}</span></td>
+        <td data-label="Booked Slot"><strong>${this.formatPreferredSlot(c.preferred_date_time)}</strong></td>
+        <td data-label="Details">
           <button class="icon-btn" onclick="event.stopPropagation(); app.openDetailSheet('${c.id}')">
             <i data-lucide="chevron-right" style="width:16px; height:16px;"></i>
           </button>

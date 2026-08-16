@@ -586,7 +586,7 @@ input[type="button"]:active {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  z-index: 10;
+  z-index: 1000;
 }
 
 .top-nav-left {
@@ -2352,4 +2352,641 @@ input[type="button"]:active {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
+
+/* ==========================================================================
+   ADVANCED PRODUCTION RESPONSIVE ARCHITECTURE (MOBILE -> ULTRA-WIDE)
+   ========================================================================== */
+
+/* 1. Mobile Drawer Navigation & Backdrop Overlay */
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 490;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-spring);
+}
+
+.mobile-nav-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-nav-toggle {
+  display: none !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  flex-shrink: 0;
+}
+
+.mobile-nav-toggle i,
+.mobile-nav-toggle svg {
+  width: 22px !important;
+  height: 22px !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.mobile-drawer-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.mobile-drawer-close {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 2. Responsive Container Limits for Ultra-Wide PC Monitors (1920px+) */
+.view-viewport {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.content-view {
+  width: min(100%, 1600px);
+  margin-inline: auto;
+}
+
+/* 3. Fluid Responsive Typography Helpers */
+.view-header-bar h2 {
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+}
+
+.metric-number {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.auth-header h2 {
+  font-size: clamp(1.15rem, 3.5vw, 1.45rem);
+}
+
+/* =========================================================================
+   RESPONSIVE MEDIA QUERIES (LAPTOP, TABLET, MOBILE, ULTRA-WIDE)
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   A. LAPTOP / SMALL DESKTOP (1025px - 1280px)
+   ------------------------------------------------------------------------- */
+@media (max-width: 1280px) {
+  .top-nav {
+    padding: 0 16px;
+  }
+
+  .top-nav-left {
+    gap: 12px;
+  }
+
+  .top-nav-menu {
+    gap: 6px;
+  }
+
+  .nav-item {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .search-box {
+    width: 180px;
+  }
+
+  .search-box:focus-within {
+    width: 220px;
+  }
+
+  .dashboard-split-grid {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   B. TABLET & MOBILE DRAWER TRANSITION (320px - 1024px)
+   ------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .mobile-nav-toggle {
+    display: inline-flex !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .top-nav {
+    padding: 0 16px;
+    height: 64px;
+  }
+
+  .top-nav-left {
+    gap: 10px;
+  }
+
+  .top-brand .brand-info p {
+    display: none;
+  }
+
+  /* CHANGE 1 FIX: Solid Crisp Liquid Glass Mobile Drawer (Zero Blur Distortion) */
+  .mobile-nav-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 900 !important;
+    background: rgba(4, 6, 14, 0.75) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.25s ease !important;
+  }
+
+  .mobile-nav-backdrop.active {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .top-nav-menu {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 300px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    background: #0c0e18 !important; /* Solid dark background to prevent blur distortion */
+    border-right: 1px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 10px 0 60px rgba(0, 0, 0, 0.95) !important;
+    z-index: 10000 !important; /* Sits ABOVE mobile-nav-backdrop */
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 20px !important;
+    gap: 12px !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    overflow-y: auto !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .top-nav-menu.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .mobile-drawer-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .mobile-drawer-header .top-brand .brand-info p {
+    display: block !important;
+  }
+
+  .top-nav-menu .nav-item {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    padding: 14px 18px !important;
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-radius: var(--radius-md, 14px) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .top-nav-menu .nav-item.active {
+    background: linear-gradient(135deg, #10069f, #080350) !important;
+    border-color: #10069f !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(16, 6, 159, 0.5) !important;
+  }
+
+  .top-user-profile .user-info {
+    display: none;
+  }
+
+  .view-viewport {
+    padding: 20px 16px;
+  }
+
+  .metrics-grid-2col {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dashboard-split-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .calendar-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .slide-sheet {
+    width: 480px;
+    max-width: 90vw;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   C. PHABLET & MOBILE (320px - 768px)
+   ------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0 12px;
+  }
+
+  .top-brand .brand-info h2 {
+    font-size: 0.85rem;
+  }
+
+  .top-brand .brand-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* CHANGE 2 FIX: Interactive Mobile Search Bar */
+  .search-box {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .search-box i.search-icon-btn {
+    width: 20px !important;
+    height: 20px !important;
+    color: #ffffff !important;
+    margin-right: 0 !important;
+  }
+
+  .search-box input {
+    display: none !important;
+  }
+
+  .search-box .mobile-search-close {
+    display: none !important;
+  }
+
+  /* Mobile Search Bar Expanded Overlay */
+  .search-box.mobile-expanded {
+    position: absolute !important;
+    top: 8px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: calc(100% - 20px) !important;
+    height: 48px !important;
+    border-radius: 9999px !important;
+    z-index: 2000 !important;
+    background: #0f111e !important;
+    border: 1px solid #10069f !important;
+    padding: 0 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85) !important;
+    justify-content: flex-start !important;
+  }
+
+  .search-box.mobile-expanded input {
+    display: block !important;
+    width: 100% !important;
+    color: #ffffff !important;
+    font-size: 0.9rem !important;
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    padding-left: 10px !important;
+  }
+
+  .search-box.mobile-expanded .mobile-search-close {
+    display: inline-flex !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-left: 8px !important;
+  }
+
+  .view-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .view-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .segmented-control {
+    width: 100%;
+    overflow-x: auto;
+    padding: 4px;
+  }
+
+  .segmented-control .seg-item {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap;
+  }
+
+  /* CHANGE 3 FIX: Automated Call Service Separation Hub Responsive Options Wrap */
+  .service-separation-section {
+    padding: 16px 14px !important;
+  }
+
+  .separation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px !important;
+  }
+
+  .separation-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    overflow-x: visible !important;
+    padding-bottom: 4px !important;
+    width: 100% !important;
+  }
+
+  .sep-tab-btn {
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius-full) !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  }
+
+  .separated-jobs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+    gap: 12px;
+  }
+
+  /* CHANGE 4 FIX: Recent AI Inbound Calls Responsive Mobile Table Reflow */
+  .table-container {
+    overflow-x: visible !important;
+  }
+
+  .apple-table {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .apple-table thead {
+    display: none !important;
+  }
+
+  .apple-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .apple-table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: var(--radius-sm, 12px) !important;
+    margin-bottom: 6px !important;
+  }
+
+  .apple-table tbody tr td {
+    padding: 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    font-size: 0.82rem !important;
+  }
+
+  .apple-table tbody tr td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 12px;
+  }
+
+  /* CHANGE 5 FIX: Inspection Schedule Preview Responsive Layout */
+  .dashboard-split-grid .panel-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-split-grid .panel-link-btn {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  .appt-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    border-radius: var(--radius-sm, 12px) !important;
+    width: 100% !important;
+  }
+
+  .appt-time-box {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 6px !important;
+  }
+
+  .appt-details {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .appt-item .status-pill {
+    align-self: flex-start !important;
+    margin-top: 4px !important;
+  }
+
+  /* Full Screen Slide Sheet on Mobile */
+  .slide-sheet {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .sheet-header {
+    padding: 16px;
+  }
+
+  .sheet-body {
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+
+  .entity-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .player-controls-row {
+    gap: 10px;
+  }
+
+  .time-slots-list .slot-row {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .slot-time {
+    width: 100%;
+    font-size: 0.82rem;
+  }
+
+  .week-calendar-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   D. SMALL MOBILE PHONES (320px - 480px)
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .view-viewport {
+    padding: 14px 10px;
+  }
+
+  .metric-card {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .metric-icon-wrap {
+    width: 40px;
+    height: 40px;
+  }
+
+  .metric-icon-wrap i {
+    width: 20px;
+    height: 20px;
+  }
+
+  .service-separation-section {
+    padding: 14px 12px;
+  }
+
+  .table-panel {
+    padding: 14px 12px;
+  }
+
+  .auth-card {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+
+  .auth-brand-logo {
+    width: 58px;
+    height: 58px;
+  }
+
+  .auth-brand-logo img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .user-dropdown-menu {
+    width: calc(100vw - 32px);
+    right: -8px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   E. ULTRA-WIDE MONITORS & LARGE DISPLAYS (1920px - 2560px+)
+   ------------------------------------------------------------------------- */
+@media (min-width: 1920px) {
+  .view-viewport {
+    padding: 36px 48px;
+  }
+
+  .content-view {
+    max-width: 1800px;
+  }
+
+  .metrics-grid-2col {
+    gap: 24px;
+  }
+
+  .dashboard-split-grid {
+    grid-template-columns: 1.5fr 1fr;
+    gap: 28px;
+  }
+
+  .separated-jobs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 18px;
+  }
+}
+
 

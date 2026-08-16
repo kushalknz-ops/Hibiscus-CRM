@@ -32,13 +32,21 @@
   </svg>
 
   <div id="app" class="app-layout">
+    <!-- Mobile Nav Backdrop Overlay -->
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop" onclick="app.closeMobileNav()"></div>
+
     <!-- Main Content Area -->
     <main class="main-content">
       <!-- Top Apple-style Glass Navigation Bar -->
       <header class="top-nav">
         <div class="top-nav-left">
+          <!-- Mobile Hamburger Menu Toggle Button -->
+          <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu" onclick="app.toggleMobileNav()">
+            <i data-lucide="menu" id="mobileNavIcon"></i>
+          </button>
+
           <!-- Brand Logo & Title -->
-          <div class="top-brand">
+          <div class="top-brand" onclick="app.switchView('dashboard')" style="cursor: pointer;">
             <div class="brand-avatar">
               <img src="Logo-120.png" alt="Hibiscus Coast Logo" style="width:100%; height:100%; object-fit:contain;">
             </div>
@@ -48,10 +56,25 @@
             </div>
           </div>
 
-          <div class="top-nav-divider"></div>
+          <div class="top-nav-divider desktop-only"></div>
 
-          <!-- Workspace Function Tabs -->
-          <nav class="top-nav-menu">
+          <!-- Workspace Function Tabs / Mobile Drawer Navigation -->
+          <nav class="top-nav-menu" id="topNavMenu" aria-label="Main Navigation">
+            <div class="mobile-drawer-header">
+              <div class="top-brand">
+                <div class="brand-avatar">
+                  <img src="Logo-120.png" alt="Hibiscus Coast Logo" style="width:100%; height:100%; object-fit:contain;">
+                </div>
+                <div class="brand-info">
+                  <h2>Hibiscus Coast</h2>
+                  <p>Panel Beaters CRM</p>
+                </div>
+              </div>
+              <button class="icon-btn mobile-drawer-close" aria-label="Close navigation" onclick="app.closeMobileNav()">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+
             <button class="nav-item active" data-view="dashboard">
               <i data-lucide="layout-grid"></i>
               <span>Dashboard</span>
@@ -72,21 +95,24 @@
 
         <div class="top-nav-right">
           <!-- Quick Search bar -->
-          <div class="search-box">
-            <i data-lucide="search"></i>
-            <input type="text" id="globalSearchInput" placeholder="Search rego, customer, phone, service..." />
-            <kbd>⌘K</kbd>
+          <div class="search-box" id="globalSearchBox" onclick="app.toggleMobileSearch(event)">
+            <i data-lucide="search" class="search-icon-btn"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search rego, phone, name..." aria-label="Search records" />
+            <button class="mobile-search-close" id="mobileSearchClose" aria-label="Close search" onclick="event.stopPropagation(); app.closeMobileSearch();">
+              <i data-lucide="x"></i>
+            </button>
+            <kbd class="desktop-only">⌘K</kbd>
           </div>
 
           <!-- Liquid Glass Action Icon Button -->
-          <button class="liquid-glass-btn icon-only" id="btnRefreshOmniData" title="Fetch latest call data">
+          <button class="liquid-glass-btn icon-only" id="btnRefreshOmniData" title="Fetch latest call data" aria-label="Refresh Data">
             <i data-lucide="refresh-cw"></i>
           </button>
 
           <div class="top-nav-divider"></div>
 
           <!-- User Profile & Dropdown -->
-          <div class="top-user-profile" id="topUserProfile" onclick="app.toggleUserDropdown(event)">
+          <div class="top-user-profile" id="topUserProfile" onclick="app.toggleUserDropdown(event)" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
             <div class="user-avatar" id="userAvatarText">S</div>
             <div class="user-info">
               <div class="user-name" id="userNameText">Santu (Director)</div>
