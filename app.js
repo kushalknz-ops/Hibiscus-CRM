@@ -728,6 +728,7 @@ class HibiscusCRM {
     let dateStr = null;
     let timeStr = null;
 
+    // 1. Check interactions function call args
     if (call.interactions) {
       for (const turn of call.interactions) {
         if (turn.function_call_data && Array.isArray(turn.function_call_data)) {
@@ -743,20 +744,36 @@ class HibiscusCRM {
       }
     }
 
-    if (!dateStr && call.preferred_date_time) {
-      const raw = call.preferred_date_time.toLowerCase();
-      if (raw.includes('today') || raw.includes('14 aug') || raw.includes('2026-08-14')) {
-        dateStr = '2026-08-14';
+    // 2. Check preferred_date_time string e.g. "15 Aug 2026, 11:04 AM" or "14 Aug, 04:00 PM"
+    if (call.preferred_date_time) {
+      const pref = call.preferred_date_time;
+      const dateMatch = pref.match(/(\d{1,2})\s+([A-Za-z]{3})(?:\s+(\d{4}))?/i);
+      if (dateMatch) {
+        const day = dateMatch[1].padStart(2, '0');
+        const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+        const month = months[dateMatch[2].toLowerCase()] || '08';
+        const year = dateMatch[3] || '2026';
+        dateStr = `${year}-${month}-${day}`;
       }
-      if (raw.includes('4 o\'clock') || raw.includes('4 pm') || raw.includes('04:00 pm') || raw.includes('4:00 pm') || raw.includes('16:00')) {
-        timeStr = '04:00 PM';
+
+      const timeMatch = pref.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+      if (timeMatch) {
+        timeStr = timeMatch[1].toUpperCase();
       }
     }
 
-    if (!dateStr && call.time_of_call) {
+    // 3. Fallback to time_of_call Date
+    if (call.time_of_call) {
       const dt = new Date(call.time_of_call);
       if (!isNaN(dt.getTime())) {
-        dateStr = this.formatDateKey(dt);
+        if (!dateStr) dateStr = this.formatDateKey(dt);
+        if (!timeStr) {
+          const hours = dt.getHours();
+          const mins = dt.getMinutes();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const h12 = hours % 12 || 12;
+          timeStr = `${String(h12).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${ampm}`;
+        }
       }
     }
 
@@ -771,15 +788,33 @@ class HibiscusCRM {
     return t.replace(/^0/, '').replace(/\s+/g, '').toUpperCase();
   }
 
-  // Get real booking for a specific date and time
+  // Get real booking for a specific date and time slot
   getBookingForSlot(targetDate, slotTime) {
     const targetKey = this.formatDateKey(targetDate);
-    const normalizedSlot = this.normalizeTimeForMatch(slotTime);
+
+    const parseSlotMinutes = (tStr) => {
+      if (!tStr) return -1;
+      const m = tStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+      if (!m) return -1;
+      let h = parseInt(m[1], 10);
+      const mins = parseInt(m[2], 10);
+      const ampm = m[3] ? m[3].toUpperCase() : '';
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return h * 60 + mins;
+    };
+
+    const slotMins = parseSlotMinutes(slotTime);
 
     return this.calls.find(c => {
       const booking = this.extractBookingDateTime(c);
-      if (!booking) return false;
-      return booking.dateStr === targetKey && this.normalizeTimeForMatch(booking.timeStr) === normalizedSlot;
+      if (!booking || booking.dateStr !== targetKey) return false;
+
+      const callMins = parseSlotMinutes(booking.timeStr);
+      if (slotMins !== -1 && callMins !== -1) {
+        return Math.abs(slotMins - callMins) < 45;
+      }
+      return this.normalizeTimeForMatch(booking.timeStr) === this.normalizeTimeForMatch(slotTime);
     });
   }
 
@@ -1111,6 +1146,61 @@ class HibiscusCRM {
     const backdrop = document.getElementById('sheetBackdrop');
     if (sheet) sheet.classList.remove('active');
     if (backdrop) backdrop.classList.remove('active');
+  }
+
+  jumpToCallInCalendar(targetCall) {
+    const call = targetCall || this.activeCallDetail || this.calls[0];
+    if (!call) return;
+
+    let targetDate = new Date(2026, 7, 14); // Default 14 Aug 2026
+
+    // 1. Try extracting date string from booking info
+    const booking = this.extractBookingDateTime(call);
+    if (booking && booking.dateStr) {
+      const parts = booking.dateStr.split('-');
+      if (parts.length === 3) {
+        targetDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+    } else if (call.preferred_date_time) {
+      const p = call.preferred_date_time.toLowerCase();
+      if (p.includes('15 aug') || p.includes('2026-08-15')) {
+        targetDate = new Date(2026, 7, 15);
+      } else if (p.includes('14 aug') || p.includes('2026-08-14')) {
+        targetDate = new Date(2026, 7, 14);
+      } else if (p.includes('16 aug') || p.includes('2026-08-16')) {
+        targetDate = new Date(2026, 7, 16);
+      }
+    } else if (call.time_of_call) {
+      const d = new Date(call.time_of_call);
+      if (!isNaN(d.getTime())) {
+        targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      }
+    }
+
+    // Set selected date and view
+    this.selectedDate = targetDate;
+    this.switchView('appointments');
+    this.renderCalendar();
+    this.closeDetailSheet();
+
+    // Notification toast
+    const dateFormatted = targetDate.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    this.showToast(`📅 Navigated to ${call.caller_full_name}'s booking (${dateFormatted})`);
+
+    // Smooth scroll and pulse highlight the booked slot card
+    setTimeout(() => {
+      const bookedSlot = document.querySelector(`.slot-row.booked[onclick*="${call.id}"]`) || document.querySelector(`.week-slot-cell.booked[onclick*="${call.id}"]`);
+      if (bookedSlot) {
+        bookedSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        bookedSlot.style.transition = 'all 0.4s ease';
+        bookedSlot.style.boxShadow = '0 0 30px #10069f, inset 0 0 15px #10069f';
+        bookedSlot.style.borderColor = '#10069f';
+        setTimeout(() => {
+          bookedSlot.style.boxShadow = '';
+          bookedSlot.style.borderColor = '';
+        }, 3000);
+      }
+    }, 350);
   }
 
   startLiveSyncPolling() {
