@@ -314,6 +314,10 @@ class HibiscusCRM {
       if (dropdown && topProfile && !topProfile.contains(e.target)) {
         dropdown.style.display = 'none';
       }
+      const searchBox = document.getElementById('globalSearchBox');
+      if (searchBox && !searchBox.contains(e.target) && window.innerWidth <= 768) {
+        this.closeMobileSearch();
+      }
     });
 
     // Service Separation Category Tabs
@@ -451,10 +455,10 @@ class HibiscusCRM {
     const kbdBadge = document.getElementById('searchKbdBadge');
     if (input) {
       input.value = '';
-      input.focus();
     }
     if (clearBtn) clearBtn.style.display = 'none';
     if (kbdBadge) kbdBadge.style.display = 'inline-block';
+    this.closeMobileSearch();
     this.handleSearch('');
   }
 
