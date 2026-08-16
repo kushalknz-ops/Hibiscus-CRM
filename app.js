@@ -338,8 +338,16 @@ class HibiscusCRM {
 
     // Search Inputs
     const globalSearch = document.getElementById('globalSearchInput');
+    const clearBtn = document.getElementById('searchClearBtn');
+    const kbdBadge = document.getElementById('searchKbdBadge');
+
     if (globalSearch) {
-      globalSearch.addEventListener('input', (e) => this.handleSearch(e.target.value));
+      globalSearch.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (clearBtn) clearBtn.style.display = val.trim().length > 0 ? 'inline-flex' : 'none';
+        if (kbdBadge) kbdBadge.style.display = val.trim().length > 0 ? 'none' : 'inline-block';
+        this.handleSearch(val);
+      });
     }
     const callLogSearch = document.getElementById('callLogSearchInput');
     if (callLogSearch) {
@@ -435,6 +443,19 @@ class HibiscusCRM {
   closeMobileSearch() {
     const searchBox = document.getElementById('globalSearchBox');
     if (searchBox) searchBox.classList.remove('mobile-expanded');
+  }
+
+  clearGlobalSearch() {
+    const input = document.getElementById('globalSearchInput');
+    const clearBtn = document.getElementById('searchClearBtn');
+    const kbdBadge = document.getElementById('searchKbdBadge');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (kbdBadge) kbdBadge.style.display = 'inline-block';
+    this.handleSearch('');
   }
 
   switchView(viewName) {

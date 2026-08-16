@@ -98,10 +98,10 @@
           <div class="search-box" id="globalSearchBox" onclick="app.toggleMobileSearch(event)">
             <i data-lucide="search" class="search-icon-btn"></i>
             <input type="text" id="globalSearchInput" placeholder="Search rego, phone, name..." aria-label="Search records" />
-            <button class="mobile-search-close" id="mobileSearchClose" aria-label="Close search" onclick="event.stopPropagation(); app.closeMobileSearch();">
+            <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear text" onclick="event.stopPropagation(); app.clearGlobalSearch();" style="display: none;">
               <i data-lucide="x"></i>
             </button>
-            <kbd class="desktop-only">⌘K</kbd>
+            <kbd class="desktop-only" id="searchKbdBadge">⌘K</kbd>
           </div>
 
           <!-- Liquid Glass Action Icon Button -->

@@ -758,6 +758,38 @@ input[type="button"]:active {
   border-radius: 4px;
 }
 
+.search-clear-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 0 !important;
+  margin: 0 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.search-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+  transform: scale(1.1) !important;
+}
+
+.search-clear-btn i,
+.search-clear-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
 /* Viewport */
 .view-viewport {
   flex: 1;
