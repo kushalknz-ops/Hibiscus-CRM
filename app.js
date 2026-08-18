@@ -1127,9 +1127,10 @@ class HibiscusCRM {
     const merged = Array.from(map.values());
     if (merged.length > 0) {
       merged.sort((a, b) => {
-        const tA = new Date(a.time_of_call || a.created_at || 0).getTime();
-        const tB = new Date(b.time_of_call || b.created_at || 0).getTime();
-        return tB - tA;
+        const tA = new Date(a.created_at || a.time_of_call || 0).getTime();
+        const tB = new Date(b.created_at || b.time_of_call || 0).getTime();
+        if (tA !== tB) return tB - tA;
+        return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
       });
 
       this.calls = merged;
