@@ -7,200 +7,8 @@ if (window.supabase && window.supabase.createClient) {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
-// REAL OMNIDIMENSION LIVE CALL RECORDS (FETCHED DIRECTLY FROM OMNIDIMENSION API)
-const OMNIDIMENSION_INITIAL_CALLS = [
-  {
-    id: 6658503,
-    time_of_call: '2026-08-15 11:04:25',
-    display_time: '15 Aug 2026, 11:04 AM',
-    caller_full_name: 'Swati Kupa',
-    contact_phone_number: '630455',
-    contact_email: 'neeraj007@gmail.com',
-    vehicle_registration: 'QP3345',
-    vehicle_make_model_year: 'Subaru Outback 2018',
-    service_requested: 'WOF repairs',
-    service_category: 'wof',
-    preferred_date_time: 'Visual Check at 681 Whangaparaoa Rd',
-    urgency_level: 'High',
-    insurance_company: 'Not provided (Private Job)',
-    insurance_claim_number: 'Not provided',
-    pickup_address: '681 Whangaparaoa Road',
-    call_duration: '01:45',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Swati Kupa called requesting a WOF rust repair for her vehicle (rego QP3345) that failed WOF inspection due to structural rust. Arna (AI) gathered her contact details and booked a visual inspection check at 681 Whangaparaoa Road.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6658503?token=f4330bea1fad1551f17a2692249d70fb',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6658503?token=f4330bea1fad1551f17a2692249d70fb',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Kee-ora, Thanks for calling Hibiscus Coast Panel Beaters, this is Arna speaking — how can I help you today?' },
-      { sequence: 2, sender: 'caller', name: 'Swati Kupa', text: 'Hi Ana, I need a WOF rust repair.' },
-      { sequence: 3, sender: 'agent', name: 'Arna (AI)', text: 'Ah, you mean a WOF rust repair? Sweet as, I can help with that. Has your vehicle failed the WOF due to rust or structural damage?' },
-      { sequence: 4, sender: 'caller', name: 'Swati Kupa', text: 'Yes.' },
-      { sequence: 5, sender: 'agent', name: 'Arna (AI)', text: 'Cool, I’ll need to book you in for a quick visual check here at our Whangaparaoa Road shop. What’s your name please?' },
-      { sequence: 6, sender: 'caller', name: 'Swati Kupa', text: 'Swati Kupa.' },
-      { sequence: 7, sender: 'agent', name: 'Arna (AI)', text: 'Thanks Swati. And your phone number to reach you?' },
-      { sequence: 8, sender: 'caller', name: 'Swati Kupa', text: 'Phone number 630455.' },
-      { sequence: 9, sender: 'agent', name: 'Arna (AI)', text: 'Got it, 630455 right? And your email address please?' },
-      { sequence: 10, sender: 'caller', name: 'Swati Kupa', text: 'Mail address should be neeraj007@gmail.com and rego QP3345.' },
-      { sequence: 11, sender: 'agent', name: 'Arna (AI)', text: 'Thanks for your time today Swati. Take care and have a good one!' }
-    ]
-  },
-  {
-    id: 6655641,
-    time_of_call: '2026-08-15 10:16:02',
-    display_time: '15 Aug 2026, 10:16 AM',
-    caller_full_name: 'Neeraj',
-    contact_phone_number: '22555515',
-    contact_email: 'neeraj007@gmail.com',
-    vehicle_registration: 'QPW 435',
-    vehicle_make_model_year: 'Subaru Impreza 2020',
-    service_requested: 'Private Repair Quotes',
-    service_category: 'private',
-    preferred_date_time: 'Monday 17 Aug 2026, 01:00 PM',
-    urgency_level: 'High',
-    insurance_company: 'Not provided (Private Job)',
-    insurance_claim_number: 'Not provided',
-    pickup_address: '681 Whangaparaoa Road',
-    call_duration: '01:34',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Neeraj called to book an appointment for a car bumper collision repair. Arna (AI) confirmed vehicle rego QPW 435 and scheduled a visual damage assessment for Monday 17 Aug at 1:00 PM.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6655641?token=f868929770e8f8514d2a80ac33603700',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6655641?token=f868929770e8f8514d2a80ac33603700',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Kee-ora, Thanks for calling Hibiscus Coast Panel Beaters, this is Arna speaking — how can I help you today?' },
-      { sequence: 2, sender: 'caller', name: 'Neeraj', text: 'Hi Ana, I met with an collision. My car bumper was braked and I want to book an appointment.' },
-      { sequence: 3, sender: 'agent', name: 'Arna (AI)', text: 'Oh no, sorry to hear that. Monday at 11:00 PM is outside our hours. Would Monday early afternoon work instead?' },
-      { sequence: 4, sender: 'caller', name: 'Neeraj', text: 'Yeah, early afternoon Monday works at 1:00 PM.' },
-      { sequence: 5, sender: 'agent', name: 'Arna (AI)', text: 'Monday at 1:00 PM is available. Can I get your full name, phone number, email, and rego plate?' },
-      { sequence: 6, sender: 'caller', name: 'Neeraj', text: 'Yeah, my name is Neeraj, phone 22555515, email neeraj007@gmail.com, rego QPW 435.' },
-      { sequence: 7, sender: 'agent', name: 'Arna (AI)', text: 'Your appointment for Monday August 17th at 1:00 PM is all booked in at 681 Whangaparaoa Road, Stanmore Bay.' },
-      { sequence: 8, sender: 'caller', name: 'Neeraj', text: 'Thank you. Bye-bye.' },
-      { sequence: 9, sender: 'agent', name: 'Arna (AI)', text: 'Sweet as Neeraj, thanks for giving us a bell. Take care of that bumper and have a good one. Bye now.' }
-    ]
-  },
-  {
-    id: 6653809,
-    time_of_call: '2026-08-15 03:26:00',
-    display_time: '15 Aug 2026, 03:26 PM',
-    caller_full_name: 'Neeraj',
-    contact_phone_number: '225555515',
-    contact_email: 'neeraj007@gmail.com',
-    vehicle_registration: 'CLI-345',
-    vehicle_make_model_year: 'Subaru Forester 2019',
-    service_requested: 'Private Repair Quotes',
-    service_category: 'private',
-    preferred_date_time: 'Monday 17 Aug 2026, 10:00 AM',
-    urgency_level: 'High',
-    insurance_company: 'Not provided (Private Job)',
-    insurance_claim_number: 'Not provided',
-    pickup_address: '681 Whangaparaoa Road',
-    call_duration: '01:52',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Neeraj called to book an appointment for a private car repair after a bumper collision. Arna (AI) confirmed vehicle rego CLI-345 and scheduled a visual damage assessment for Monday 17 Aug at 10:00 AM.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6653809?token=3bb14d6e5fcde3ab39829602ed9b93fc',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6653809?token=3bb14d6e5fcde3ab39829602ed9b93fc',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Kee-ora, Thanks for calling Hibiscus Coast Panel Beaters, this is Arna speaking — how can I help you today?' },
-      { sequence: 2, sender: 'caller', name: 'Neeraj', text: 'Hello, Anna. I\'m Niro. Uh, my car met with an collision and bumper got damage, so I want to book an appointment.' },
-      { sequence: 3, sender: 'agent', name: 'Arna (AI)', text: 'Oh no, sorry to hear about your bumper, Niro. Is this a private repair or are you going through insurance for this one?' },
-      { sequence: 4, sender: 'caller', name: 'Neeraj', text: 'It\'s in private.' },
-      { sequence: 5, sender: 'agent', name: 'Arna (AI)', text: 'Righto, for a private job we do need to have a quick look in person to give you an accurate quote. Can I get your full name, phone number, email, and the rego of your car first?' },
-      { sequence: 6, sender: 'caller', name: 'Neeraj', text: 'Yes, full name is Neeraj. Phone number is 22555 515, and email is neeraj007@gmail.com. And the rego of my car is CLI-345.' },
-      { sequence: 7, sender: 'agent', name: 'Arna (AI)', text: 'Thanks, Neeraj. Just to confirm, your phone is 22555 515, email neeraj007@gmail.com, and rego CLI-345?' },
-      { sequence: 8, sender: 'caller', name: 'Neeraj', text: 'Yes.' },
-      { sequence: 9, sender: 'agent', name: 'Arna (AI)', text: 'Sweet as, Neeraj. What day and time would suit you for a quick check at our place on Whangaparaoa Road?' },
-      { sequence: 10, sender: 'caller', name: 'Neeraj', text: 'Monday at 10:00 AM.' },
-      { sequence: 11, sender: 'agent', name: 'Arna (AI)', text: 'All set, Neeraj. Your appointment is booked for Monday the 17th of August at 10:00 AM at 681 Whangaparaoa Road, Stanmore Bay. Sweet as?' },
-      { sequence: 12, sender: 'caller', name: 'Neeraj', text: 'Thank you. Bye-bye.' },
-      { sequence: 13, sender: 'agent', name: 'Arna (AI)', text: 'Thanks for calling, Neeraj. Take care and all the best with your car repair. Bye for now.' }
-    ]
-  },
-  {
-    id: 6601441,
-    time_of_call: '2026-08-14 08:47:00',
-    display_time: '14 Aug 2026, 08:47 AM',
-    caller_full_name: 'Kushal Gupa',
-    contact_phone_number: '0225552515',
-    contact_email: 'kushalKNZ@gmail.com',
-    vehicle_registration: 'QPW438',
-    vehicle_make_model_year: 'Toyota Corolla 2017',
-    service_requested: 'WOF repairs',
-    service_category: 'wof',
-    preferred_date_time: 'Today, 4 o\'clock (14 Aug, 04:00 PM)',
-    urgency_level: 'Medium',
-    insurance_company: 'Not provided',
-    insurance_claim_number: 'Not provided',
-    pickup_address: 'Not provided',
-    call_duration: '02:03',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Kushal Gupa scheduled a visual check for WOF rust repairs. Booked appointment for today at 4:00 PM.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6601441?token=d4d2d0b504cc6ecc3bb288ab98785379',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6601441?token=d4d2d0b504cc6ecc3bb288ab98785379',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Kee-ora, Thanks for calling Hibiscus Coast Panel Beaters, this is Arna speaking — how can I help you today?' },
-      { sequence: 2, sender: 'caller', name: 'Kushal Gupa', text: 'Hi there. I\'m looking to get my WOF repairs done.' },
-      { sequence: 3, sender: 'agent', name: 'Arna (AI)', text: 'Got it, rust issues on the WOF. I’ll book you in for a quick visual check today at 4:00 PM.' }
-    ]
-  },
-  {
-    id: 6444643,
-    time_of_call: '2026-08-08 10:44:34',
-    display_time: '08 Aug 2026, 10:44 AM',
-    caller_full_name: 'Kushal Kuppa',
-    contact_phone_number: '0225552515',
-    contact_email: 'kushal.k@gmail.com',
-    vehicle_registration: 'QPW-435',
-    vehicle_make_model_year: 'Rear Collision & Inner Trims Damage',
-    service_requested: 'Private Repair Quotes',
-    service_category: 'private',
-    preferred_date_time: 'Visual Damage Check at 681 Whangaparaoa Rd',
-    urgency_level: 'High',
-    insurance_company: 'Not provided (Private Job)',
-    insurance_claim_number: 'Not provided',
-    pickup_address: '681 Whangaparaoa Road',
-    call_duration: '02:23',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Kushal called following a rear-end collision on the road that damaged his bumper and inner trims. Arna (AI) arranged a visual damage assessment at 681 Whangaparaoa Road for an accurate repair quote.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6444643?token=288de9bb5b7f49cb056c4e50ccf24ae3',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6444643?token=288de9bb5b7f49cb056c4e50ccf24ae3',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Thanks for calling Hibiscus Coast Panel Beaters, this is Arna — how can I help you today?' },
-      { sequence: 2, sender: 'caller', name: 'Kushal Kuppa', text: 'Hi, this is Kushal speaking. I was on the road today and met a collision with another car; he bumped me from the back, and then my bumper got damaged and inner trims got damaged. I would like to get an appointment for a quote.' },
-      { sequence: 3, sender: 'agent', name: 'Arna (AI)', text: 'Oh no, that sounds stressful, Kushal. We\'ll need to check your vehicle in person for a quote. Can you drive it to our shop at 681 Whangaparaoa Road?' },
-      { sequence: 4, sender: 'caller', name: 'Kushal Kuppa', text: 'Yeah, that works. Full name is Kushal Kuppa, phone 022 555 2515, rego QPW-435.' }
-    ]
-  },
-  {
-    id: 6038566,
-    time_of_call: '2026-08-08 10:42:09',
-    display_time: '08 Aug 2026, 10:42 AM',
-    caller_full_name: 'Kushal Kuppa',
-    contact_phone_number: '0225552515',
-    contact_email: 'kushal.k@gmail.com',
-    vehicle_registration: 'QPW-435',
-    vehicle_make_model_year: 'Panel Damage Assessment',
-    service_requested: 'Private Repair Quotes',
-    service_category: 'private',
-    preferred_date_time: 'Visual Assessment Inquiry',
-    urgency_level: 'Medium',
-    insurance_company: 'Not provided',
-    insurance_claim_number: 'Not provided',
-    pickup_address: 'Not provided',
-    call_duration: '01:10',
-    call_status: 'completed',
-    sentiment_score: 'Positive',
-    sentiment_summary: 'Kushal initiated a panel damage quote inquiry with Arna (AI) for vehicle QPW-435.',
-    recording_url: 'https://omnidim.io/api/v1/recording/6038566?token=288de9bb5b7f49cb056c4e50ccf24ae3',
-    internal_recording_url: 'https://omnidim.io/api/v1/recording/6038566?token=288de9bb5b7f49cb056c4e50ccf24ae3',
-    interactions: [
-      { sequence: 1, sender: 'agent', name: 'Arna (AI)', text: 'Thanks for calling Hibiscus Coast Panel Beaters, how can I assist you today?' }
-    ]
-  }
-];
+// REAL OMNIDIMENSION LIVE CALL RECORDS (SYNCED DYNAMICALLY FROM DATABASE / API)
+const OMNIDIMENSION_INITIAL_CALLS = [];
 
 class HibiscusCRM {
   constructor() {
@@ -226,20 +34,20 @@ class HibiscusCRM {
 
   loadStoredCalls() {
     try {
-      const stored = localStorage.getItem('hcpb_omni_calls_real_v7');
+      const stored = localStorage.getItem('hcpb_omni_calls_live_v8');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.warn('Storage read error:', e);
     }
-    return OMNIDIMENSION_INITIAL_CALLS;
+    return [];
   }
 
   saveCalls() {
     try {
-      localStorage.setItem('hcpb_omni_calls_real_v7', JSON.stringify(this.calls));
+      localStorage.setItem('hcpb_omni_calls_live_v8', JSON.stringify(this.calls));
     } catch (e) {
       console.warn('Storage save error:', e);
     }
@@ -252,6 +60,7 @@ class HibiscusCRM {
     this.setupAudioEngine();
     this.renderAllViews();
     this.startLiveSyncPolling();
+    this.setupSupabaseRealtime();
     this.initAuth();
 
     if (window.lucide) window.lucide.createIcons();
@@ -484,17 +293,49 @@ class HibiscusCRM {
     if (window.lucide) window.lucide.createIcons();
   }
 
-  // AUTOMATED CALL SEPARATION LOGIC (Categorizes by extracted service_requested)
-  categorizeService(serviceStr) {
-    if (!serviceStr) return 'other';
-    const s = serviceStr.toLowerCase();
-    if (s.includes('wof') || s.includes('rust') || s.includes('compliance')) return 'wof';
-    if (s.includes('insurance') || s.includes('claim') || s.includes('state') || s.includes('ami') || s.includes('vero') || s.includes('tower')) return 'insurance';
-    if (s.includes('private') || s.includes('quote') || s.includes('scratch') || s.includes('dent') || s.includes('cash')) return 'private';
-    if (s.includes('courtesy') || s.includes('loan') || s.includes('rental') || s.includes('transport')) return 'courtesy';
-    if (s.includes('status') || s.includes('ready') || s.includes('pick-up') || s.includes('workshop')) return 'status';
-    if (s.includes('detail') || s.includes('groom') || s.includes('valet') || s.includes('polish')) return 'detailing';
-    if (s.includes('spam') || s.includes('seo') || s.includes('marketing') || s.includes('unrelated')) return 'spam';
+  // AUTOMATED CALL SEPARATION LOGIC (Categorizes by extracted service_requested & call metadata)
+  categorizeService(serviceStr, call = null) {
+    const s = (serviceStr || '').toLowerCase();
+    const summary = call && call.sentiment_summary ? call.sentiment_summary.toLowerCase() : '';
+    const status = call && call.call_status ? call.call_status.toLowerCase() : '';
+    const combined = `${s} ${summary}`;
+
+    // 1. FIRST PRIORITY: Check for Spam / Out-of-Scope indicators
+    const spamKeywords = [
+      'spam', 'out of scope', 'out-of-scope', 'scope', 'unrelated', 'seo', 'marketing',
+      'sales', 'solicitor', 'cold call', 'telemarketer', 'promotion', 'offer', 'survey',
+      'wrong number', 'wrong', 'junk', 'invalid', 'bot test', 'test call'
+    ];
+    if (spamKeywords.some(kw => combined.includes(kw))) {
+      return 'spam';
+    }
+
+    // Check mechanical / non-bodywork requests that panel beaters don't do
+    const outOfScopeMechanical = ['mechanical', 'engine oil', 'spark plug', 'transmission', 'tyre replacement', 'aircon regas'];
+    if (outOfScopeMechanical.some(kw => combined.includes(kw)) && !combined.includes('bumper') && !combined.includes('panel') && !combined.includes('rust') && !combined.includes('crash')) {
+      return 'spam';
+    }
+
+    // Check failed/no-answer/dropped calls with no valid service info
+    if ((status === 'failed' || status === 'no-answer' || status === 'busy') && (!s || s === 'n/a' || s === 'general inquiry')) {
+      return 'spam';
+    }
+
+    // 2. Specific Panel Beating Service Categories
+    if (combined.includes('wof') || combined.includes('rust') || combined.includes('compliance')) return 'wof';
+    if (combined.includes('insurance') || combined.includes('claim') || combined.includes('state') || combined.includes('ami') || combined.includes('vero') || combined.includes('tower') || combined.includes('cove') || combined.includes('fmg')) return 'insurance';
+    if (combined.includes('private') || combined.includes('quote') || combined.includes('scratch') || combined.includes('dent') || combined.includes('cash') || combined.includes('bumper') || combined.includes('collision') || combined.includes('panel')) return 'private';
+    if (combined.includes('courtesy') || combined.includes('loan') || combined.includes('rental') || combined.includes('transport')) return 'courtesy';
+    if (combined.includes('status') || combined.includes('ready') || combined.includes('pick-up') || combined.includes('workshop')) return 'status';
+    if (combined.includes('detail') || combined.includes('groom') || combined.includes('valet') || combined.includes('polish')) return 'detailing';
+
+    // 3. Fallback for unclassified general calls
+    if (s.includes('general') || s.includes('inquiry') || !s || s === 'n/a') {
+      if (summary.includes('spam') || summary.includes('out of scope') || summary.includes('unrelated') || summary.includes('sales')) {
+        return 'spam';
+      }
+    }
+
     return 'other';
   }
 
@@ -523,7 +364,7 @@ class HibiscusCRM {
     // Service category tab counters
     const counts = { all: total, wof: 0, insurance: 0, private: 0, courtesy: 0, status: 0, detailing: 0, spam: 0 };
     this.calls.forEach(c => {
-      const cat = this.categorizeService(c.service_requested);
+      const cat = this.categorizeService(c.service_requested, c);
       if (counts[cat] !== undefined) counts[cat]++;
     });
 
@@ -540,7 +381,7 @@ class HibiscusCRM {
 
     let filtered = [...this.calls];
     if (this.activeServiceFilter !== 'all') {
-      filtered = filtered.filter(c => this.categorizeService(c.service_requested) === this.activeServiceFilter);
+      filtered = filtered.filter(c => this.categorizeService(c.service_requested, c) === this.activeServiceFilter);
     }
 
     if (filtered.length === 0) {
@@ -555,7 +396,7 @@ class HibiscusCRM {
     }
 
     container.innerHTML = filtered.map(c => {
-      const cat = this.categorizeService(c.service_requested);
+      const cat = this.categorizeService(c.service_requested, c);
       const catLabels = {
         wof: 'WOF Rust Repair (UC-06)',
         insurance: 'Insurance Claim Job (UC-01)',
@@ -601,7 +442,7 @@ class HibiscusCRM {
     if (!tableBody) return;
 
     tableBody.innerHTML = this.calls.map(c => {
-      const cat = this.categorizeService(c.service_requested);
+      const cat = this.categorizeService(c.service_requested, c);
       return `
         <tr onclick="app.openDetailSheet('${c.id}')" style="cursor: pointer;">
           <td data-label="Date / Time"><strong style="color:#FFFFFF;">${c.display_time || c.time_of_call}</strong></td>
@@ -647,9 +488,9 @@ class HibiscusCRM {
     let filtered = [...this.calls];
 
     if (this.activeCallFilter !== 'all') {
-      if (this.activeCallFilter === 'wof') filtered = filtered.filter(c => this.categorizeService(c.service_requested) === 'wof');
-      else if (this.activeCallFilter === 'insurance') filtered = filtered.filter(c => this.categorizeService(c.service_requested) === 'insurance');
-      else if (this.activeCallFilter === 'private') filtered = filtered.filter(c => this.categorizeService(c.service_requested) === 'private');
+      if (this.activeCallFilter === 'wof') filtered = filtered.filter(c => this.categorizeService(c.service_requested, c) === 'wof');
+      else if (this.activeCallFilter === 'insurance') filtered = filtered.filter(c => this.categorizeService(c.service_requested, c) === 'insurance');
+      else if (this.activeCallFilter === 'private') filtered = filtered.filter(c => this.categorizeService(c.service_requested, c) === 'private');
       else if (this.activeCallFilter === 'completed') filtered = filtered.filter(c => c.call_status === 'completed');
     }
 
@@ -680,7 +521,7 @@ class HibiscusCRM {
         <td data-label="Caller Name"><strong>${c.caller_full_name}</strong></td>
         <td data-label="Phone Number"><span style="font-family:monospace;">${c.contact_phone_number}</span></td>
         <td data-label="Rego Plate"><span style="font-weight:800; background:var(--bg-pill); padding:2px 7px; border-radius:4px;">${c.vehicle_registration}</span></td>
-        <td data-label="Extracted Service"><span class="job-service-tag ${this.categorizeService(c.service_requested)}">${c.service_requested}</span></td>
+        <td data-label="Extracted Service"><span class="job-service-tag ${this.categorizeService(c.service_requested, c)}">${c.service_requested}</span></td>
         <td data-label="Booked Slot"><strong>${this.formatPreferredSlot(c.preferred_date_time)}</strong></td>
         <td data-label="Details">
           <button class="icon-btn" onclick="event.stopPropagation(); app.openDetailSheet('${c.id}')">
@@ -1218,31 +1059,88 @@ class HibiscusCRM {
     }, 4000);
   }
 
-  fetchLatestOmniData(showNotification = false) {
-    fetch('/api/calls')
-      .then(res => res.json())
-      .then(data => {
-        if (data && Array.isArray(data.calls) && data.calls.length > 0) {
-          // Merge server calls with seed calls to ensure no duplicates and full dataset
-          const existingIds = new Set(data.calls.map(c => String(c.id)));
-          const seedExtras = OMNIDIMENSION_INITIAL_CALLS.filter(c => !existingIds.has(String(c.id)));
-          this.calls = [...data.calls, ...seedExtras];
-          this.saveCalls();
-          this.renderAllViews();
-          if (showNotification) this.showToast(`✓ Fetched ${this.calls.length} live call records`);
-        } else {
-          this.calls = OMNIDIMENSION_INITIAL_CALLS;
-          this.saveCalls();
-          this.renderAllViews();
-          if (showNotification) this.showToast('✓ Synced with AI Receptionist');
+  setupSupabaseRealtime() {
+    if (!supabaseClient) return;
+    try {
+      supabaseClient
+        .channel('public:call_logs')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'call_logs' }, (payload) => {
+          console.log('[Supabase Realtime] Live call event received:', payload.new);
+          if (payload.new) {
+            this.handleRealtimeNewCall(payload.new);
+          }
+        })
+        .subscribe((status) => {
+          console.log('[Supabase Realtime Subscription Status]:', status);
+        });
+    } catch (e) {
+      console.warn('[Supabase Realtime Listener Warning]:', e);
+    }
+  }
+
+  handleRealtimeNewCall(newCall) {
+    if (!newCall || !newCall.id) return;
+    const exists = this.calls.some(c => String(c.id) === String(newCall.id));
+    if (!exists) {
+      this.calls.unshift(newCall);
+      this.saveCalls();
+      this.renderAllViews();
+      this.showToast(`📞 Live AI Call Received: ${newCall.caller_full_name} (${newCall.service_requested || 'Inbound Call'})`);
+    }
+  }
+
+  async fetchLatestOmniData(showNotification = false) {
+    let supabaseCalls = [];
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/call_logs?select=*`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         }
-      })
-      .catch(() => {
-        // Fallback to local stored calls or seed calls
-        this.calls = this.loadStoredCalls();
-        this.renderAllViews();
-        if (showNotification) this.showToast('✓ Connected to Live Call Engine');
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          supabaseCalls = data;
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase cloud fetch warning:', e);
+    }
+
+    let apiCalls = [];
+    try {
+      const res = await fetch('/api/calls');
+      const data = await res.json();
+      if (data && Array.isArray(data.calls)) {
+        apiCalls = data.calls;
+      }
+    } catch (err) {
+      // Backend api endpoint unavailable
+    }
+
+    const map = new Map();
+    [...supabaseCalls, ...apiCalls].forEach(c => {
+      if (c && c.id) map.set(String(c.id), c);
+    });
+
+    const merged = Array.from(map.values());
+    if (merged.length > 0) {
+      merged.sort((a, b) => {
+        const tA = new Date(a.time_of_call || a.created_at || 0).getTime();
+        const tB = new Date(b.time_of_call || b.created_at || 0).getTime();
+        return tB - tA;
+      });
+
+      this.calls = merged;
+      this.saveCalls();
+      this.renderAllViews();
+      if (showNotification) this.showToast(`✓ Synced ${this.calls.length} live call records from Supabase`);
+    } else {
+      this.calls = this.loadStoredCalls();
+      this.renderAllViews();
+      if (showNotification) this.showToast('✓ Connected to Live Call Engine');
+    }
   }
 
   handleSearch(query) {
