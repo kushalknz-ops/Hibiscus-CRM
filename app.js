@@ -206,7 +206,7 @@ class HibiscusCRM {
 
     if (btnToday) {
       btnToday.addEventListener('click', () => {
-        this.selectedDate = new Date(2026, 7, 14);
+        this.selectedDate = new Date();
         this.renderCalendar();
       });
     }
@@ -536,22 +536,24 @@ class HibiscusCRM {
 
   // Helper to reformat preferred date/time to DD/MM/YYYY, TIME
   formatPreferredSlot(slotStr) {
-    if (!slotStr || slotStr === 'Not specified' || slotStr === 'N/A') return 'N/A';
-    // Match e.g. "14 Aug, 04:00 PM" or "14 Aug 2026, 04:00 PM"
-    const match = slotStr.match(/(\d{1,2})\s+([A-Za-z]{3})(?:[,\s]+(\d{4}))?[,\s]+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i);
-    if (match) {
-      const day = match[1].padStart(2, '0');
-      const monthNames = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
-      const month = monthNames[match[2].toLowerCase()] || '08';
-      const year = match[3] || '2026';
-      const time = match[4].toUpperCase();
-      return `${day}/${month}/${year}, ${time}`;
-    }
-    // Match YYYY-MM-DD parse
-    const dateMatch = slotStr.match(/(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?))?/i);
+    if (!slotStr || slotStr === 'Not specified' || slotStr === 'N/A' || slotStr === 'Not provided') return 'N/A';
+    if (/tomorrow/i.test(slotStr) || /today/i.test(slotStr)) return slotStr;
+
+    const dateMatch = slotStr.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s]+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?))?/i);
     if (dateMatch) {
       const [_, y, m, d, t] = dateMatch;
       return `${d}/${m}/${y}${t ? ', ' + t : ''}`;
+    }
+
+    const match = slotStr.match(/(?:[A-Za-z]+,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})(?:[,\s]+(\d{4}))?[,\s@at]+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i);
+    if (match) {
+      const day = match[1].padStart(2, '0');
+      const monthNames = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+      const mKey = match[2].toLowerCase().substring(0, 3);
+      const month = monthNames[mKey] || '08';
+      const year = match[3] || '2026';
+      const time = match[4].toUpperCase();
+      return `${day}/${month}/${year}, ${time}`;
     }
     return slotStr;
   }
@@ -570,45 +572,103 @@ class HibiscusCRM {
     let dateStr = null;
     let timeStr = null;
 
-    // 1. Check interactions function call args
-    if (call.interactions) {
-      for (const turn of call.interactions) {
+    const callBaseDate = call.time_of_call || call.created_at ? new Date(call.time_of_call || call.created_at) : new Date();
+
+    const parseString = (str) => {
+      if (!str || str === 'Not specified' || str === 'N/A' || str === 'Not provided') return null;
+      let dStr = null;
+      let tStr = null;
+
+      // Relative dates: "Tomorrow" or "Today"
+      if (/tomorrow/i.test(str)) {
+        const nextDay = new Date(callBaseDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        dStr = this.formatDateKey(nextDay);
+      } else if (/today/i.test(str)) {
+        dStr = this.formatDateKey(callBaseDate);
+      }
+
+      // ISO Format: YYYY-MM-DD (e.g. "2026-08-20", "2026-08-20 10:00", "2026-08-20T10:00:00")
+      if (!dStr) {
+        const isoMatch = str.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s]+(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?))?/i);
+        if (isoMatch) {
+          dStr = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+          if (isoMatch[4]) tStr = isoMatch[4].trim();
+        }
+      }
+
+      // Format DMY: "20 August 2026", "20 Aug 2026", "Thursday 20 Aug"
+      if (!dStr) {
+        const dmyMatch = str.match(/(?:[A-Za-z]+,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})(?:\s+(\d{4}))?/i);
+        if (dmyMatch) {
+          const day = dmyMatch[1].padStart(2, '0');
+          const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+          const mKey = dmyMatch[2].toLowerCase().substring(0, 3);
+          if (months[mKey]) {
+            const month = months[mKey];
+            const year = dmyMatch[3] || '2026';
+            dStr = `${year}-${month}-${day}`;
+          }
+        }
+      }
+
+      // Format MDY: "August 20, 2026", "August 20"
+      if (!dStr) {
+        const mdyMatch = str.match(/([A-Za-z]{3,9})\s+(\d{1,2})(?:,?\s+(\d{4}))?/i);
+        if (mdyMatch) {
+          const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+          const mKey = mdyMatch[1].toLowerCase().substring(0, 3);
+          if (months[mKey]) {
+            const day = mdyMatch[2].padStart(2, '0');
+            const month = months[mKey];
+            const year = mdyMatch[3] || '2026';
+            dStr = `${year}-${month}-${day}`;
+          }
+        }
+      }
+
+      // Time extraction e.g. "10:00 AM", "14:00", "2:00 PM"
+      if (!tStr) {
+        const timeMatch = str.match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i);
+        if (timeMatch) {
+          tStr = timeMatch[1].toUpperCase();
+        }
+      }
+
+      return (dStr || tStr) ? { dStr, tStr } : null;
+    };
+
+    // 1. Check preferred_date_time FIRST
+    if (call.preferred_date_time) {
+      const parsed = parseString(call.preferred_date_time);
+      if (parsed) {
+        if (parsed.dStr) dateStr = parsed.dStr;
+        if (parsed.tStr) timeStr = parsed.tStr;
+      }
+    }
+
+    // 2. Check interactions function call args
+    if ((!dateStr || !timeStr) && call.interactions && Array.isArray(call.interactions)) {
+      for (let i = call.interactions.length - 1; i >= 0; i--) {
+        const turn = call.interactions[i];
         if (turn.function_call_data && Array.isArray(turn.function_call_data)) {
           for (const fc of turn.function_call_data) {
             if (fc.args && fc.args.date) {
-              dateStr = fc.args.date;
-              timeStr = fc.args.time;
+              if (!dateStr) dateStr = fc.args.date;
+              if (!timeStr && fc.args.time) timeStr = fc.args.time;
               break;
             }
           }
         }
-        if (dateStr) break;
+        if (dateStr && timeStr) break;
       }
     }
 
-    // 2. Check preferred_date_time string e.g. "15 Aug 2026, 11:04 AM" or "14 Aug, 04:00 PM"
-    if (call.preferred_date_time) {
-      const pref = call.preferred_date_time;
-      const dateMatch = pref.match(/(\d{1,2})\s+([A-Za-z]{3})(?:\s+(\d{4}))?/i);
-      if (dateMatch) {
-        const day = dateMatch[1].padStart(2, '0');
-        const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
-        const month = months[dateMatch[2].toLowerCase()] || '08';
-        const year = dateMatch[3] || '2026';
-        dateStr = `${year}-${month}-${day}`;
-      }
-
-      const timeMatch = pref.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
-      if (timeMatch) {
-        timeStr = timeMatch[1].toUpperCase();
-      }
-    }
-
-    // 3. Fallback to time_of_call Date
-    if (call.time_of_call) {
+    // 3. Fallback to time_of_call Date ONLY IF dateStr is still null
+    if (!dateStr && call.time_of_call) {
       const dt = new Date(call.time_of_call);
       if (!isNaN(dt.getTime())) {
-        if (!dateStr) dateStr = this.formatDateKey(dt);
+        dateStr = this.formatDateKey(dt);
         if (!timeStr) {
           const hours = dt.getHours();
           const mins = dt.getMinutes();
@@ -619,9 +679,21 @@ class HibiscusCRM {
       }
     }
 
+    // Format 24h time to 12h AM/PM if needed e.g. "10:00" -> "10:00 AM", "14:00" -> "02:00 PM"
+    if (timeStr && !timeStr.includes('AM') && !timeStr.includes('PM')) {
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        let h = parseInt(parts[0], 10);
+        const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        timeStr = `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+      }
+    }
+
     return {
-      dateStr: dateStr || '2026-08-14',
-      timeStr: timeStr || '04:00 PM'
+      dateStr: dateStr || this.formatDateKey(new Date()),
+      timeStr: timeStr || '10:00 AM'
     };
   }
 
