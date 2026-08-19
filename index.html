@@ -507,7 +507,22 @@
         </div>
       </button>
     </div>
-  </aside>
+  <!-- 15-MINUTE SLOT BREAKDOWN MODAL -->
+  <div class="sheet-backdrop" id="slotModalBackdrop" onclick="app.closeSlotBreakdownModal()"></div>
+  <div class="slot-breakdown-modal glass-card" id="slotBreakdownModal" style="display: none;">
+    <div class="sheet-header" style="padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+      <div class="sheet-title-group">
+        <span class="status-pill blue" id="slotModalBadge">15-Min Slots</span>
+        <h3 id="slotModalTitle" style="font-size: 1.05rem; font-weight: 700; margin-top: 4px;">Time Slot Breakdown</h3>
+      </div>
+      <button class="sheet-close-btn" onclick="app.closeSlotBreakdownModal()" title="Close Modal">
+        <i data-lucide="x" style="width:16px; height:16px;"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="slotModalBody">
+      <!-- 15-min sub-slot rows rendered via JS -->
+    </div>
+  </div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div class="toast-container" id="toastContainer"></div>

@@ -3033,4 +3033,79 @@ input[type="button"]:active {
   }
 }
 
+/* -------------------------------------------------------------------------
+   15-MINUTE BOOKING SLOTS & BREAKDOWN MODAL STYLES
+   ------------------------------------------------------------------------- */
+.sub-slots-wrapper {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sub-slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.sub-slot-item.booked {
+  background: rgba(16, 6, 159, 0.14) !important;
+  border: 1px solid rgba(16, 6, 159, 0.38) !important;
+  border-left: 4px solid #10069f !important;
+  cursor: pointer;
+}
+
+.sub-slot-item.booked:hover {
+  background: rgba(16, 6, 159, 0.28) !important;
+  border-color: rgba(16, 6, 159, 0.6) !important;
+}
+
+.sub-slot-item.available {
+  border-left: 3px solid var(--accent-green);
+  opacity: 0.85;
+}
+
+.sub-slot-time {
+  font-weight: 700;
+  color: var(--text-primary);
+  width: 150px;
+}
+
+.sub-slot-details {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slot-row.fully-booked {
+  border-left: 4px solid #ff453a !important;
+  background: rgba(255, 69, 58, 0.1) !important;
+  border: 1px solid rgba(255, 69, 58, 0.3) !important;
+  border-left-width: 4px !important;
+}
+
+.slot-breakdown-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 540px;
+  z-index: 1050;
+  padding: 24px;
+  box-shadow: var(--shadow-glass);
+}
+
+
 

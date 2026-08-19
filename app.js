@@ -347,9 +347,50 @@ class HibiscusCRM {
     this.renderCalendar();
   }
 
+  // Check if a call represents an actual booked inspection appointment
+  isInspectionBooked(call) {
+    if (!call) return false;
+
+    if (call.is_booked === true || call.booking_status === 'booked') return true;
+
+    const cat = this.categorizeService(call.service_requested, call);
+    if (cat === 'spam') return false;
+
+    if (call.interactions && Array.isArray(call.interactions)) {
+      for (const turn of call.interactions) {
+        if (turn.function_call_data && Array.isArray(turn.function_call_data)) {
+          for (const fc of turn.function_call_data) {
+            if (fc.name === 'book_google_calendar_appointment' || (fc.args && fc.args.date && fc.args.time)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    if (call.preferred_date_time) {
+      const pref = String(call.preferred_date_time).trim().toLowerCase();
+      if (!pref || pref === 'n/a' || pref === 'not provided' || pref === 'not specified' || pref === 'none' || pref.includes('test value') || pref.includes('visual check') || pref.includes('assessment inquiry')) {
+        return false;
+      }
+      if (/\d{1,2}:\d{2}|\d{1,2}\s*(am|pm)|tomorrow|today|aug|sep|oct|nov|dec|mon|tue|wed|thu|fri|sat|sun|\d{4}-\d{2}-\d{2}/i.test(pref)) {
+        return true;
+      }
+    }
+
+    if (call.sentiment_summary) {
+      const summary = call.sentiment_summary.toLowerCase();
+      if (summary.includes('successfully scheduled') || summary.includes('appointment is set') || summary.includes('booked an appointment') || summary.includes('booked for')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   updateCounters() {
     const total = this.calls.length;
-    const booked = this.calls.filter(c => c.call_status === 'completed' || c.preferred_date_time).length;
+    const booked = this.calls.filter(c => this.isInspectionBooked(c)).length;
 
     const kpiCalls = document.getElementById('kpiTotalCalls');
     const kpiAppts = document.getElementById('kpiBookedAppts');
@@ -752,6 +793,161 @@ class HibiscusCRM {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // Get all 15-minute sub-slots for an hourly label (e.g., "11:00 AM" or "07:30 AM")
+  get15MinSubSlots(hourLabel) {
+    const m = hourLabel.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!m) return [];
+
+    let h = parseInt(m[1], 10);
+    const startMin = parseInt(m[2], 10);
+    const ampm = m[3].toUpperCase();
+
+    let h24 = h;
+    if (ampm === 'PM' && h < 12) h24 += 12;
+    if (ampm === 'AM' && h === 12) h24 = 0;
+
+    const baseMins = h24 * 60 + startMin;
+    const count = (startMin === 30 && (h === 7 || h === 4)) ? 2 : 4;
+
+    const slots = [];
+    for (let i = 0; i < count; i++) {
+      const sMins = baseMins + (i * 15);
+      const eMins = sMins + 15;
+
+      const formatTime = (totalMins) => {
+        let hr = Math.floor(totalMins / 60);
+        const mn = totalMins % 60;
+        const ap = hr >= 12 ? 'PM' : 'AM';
+        let h12 = hr % 12 || 12;
+        return `${String(h12).padStart(2, '0')}:${String(mn).padStart(2, '0')} ${ap}`;
+      };
+
+      slots.push({
+        slotIndex: i,
+        startMins: sMins,
+        endMins: eMins,
+        startTimeStr: formatTime(sMins),
+        endTimeStr: formatTime(eMins),
+        label: `${formatTime(sMins)} – ${formatTime(eMins)}`
+      });
+    }
+    return slots;
+  }
+
+  // Get booking for an exact 15-minute interval
+  getBookingForExact15MinSlot(targetDate, startMins, endMins) {
+    const targetKey = this.formatDateKey(targetDate);
+
+    const parseCallMinutes = (tStr) => {
+      if (!tStr) return -1;
+      const m = tStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+      if (!m) return -1;
+      let h = parseInt(m[1], 10);
+      const mins = parseInt(m[2], 10);
+      const ampm = m[3] ? m[3].toUpperCase() : '';
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return h * 60 + mins;
+    };
+
+    return this.calls.find(c => {
+      const booking = this.extractBookingDateTime(c);
+      if (!booking || booking.dateStr !== targetKey) return false;
+
+      const callMins = parseCallMinutes(booking.timeStr);
+      if (callMins === -1) return false;
+
+      return (callMins >= startMins && callMins < endMins) || (Math.abs(callMins - startMins) <= 7);
+    });
+  }
+
+  toggleDaySlotAccordion(slotIdx) {
+    const el = document.getElementById(`sub-slots-${slotIdx}`);
+    const icon = document.getElementById(`chevron-icon-${slotIdx}`);
+    if (el) {
+      const isHidden = el.style.display === 'none';
+      el.style.display = isHidden ? 'flex' : 'none';
+      if (icon) icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+  }
+
+  openSlotBreakdownModal(targetDate, hourLabel) {
+    const modal = document.getElementById('slotBreakdownModal');
+    const backdrop = document.getElementById('slotModalBackdrop');
+    const title = document.getElementById('slotModalTitle');
+    const badge = document.getElementById('slotModalBadge');
+    const body = document.getElementById('slotModalBody');
+
+    if (!modal || !body) return;
+
+    const dateObj = new Date(targetDate);
+    const dateStr = dateObj.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (title) title.textContent = `${dateStr} • ${hourLabel} Slot`;
+
+    const subSlots = this.get15MinSubSlots(hourLabel);
+    let bookedCount = 0;
+
+    body.innerHTML = subSlots.map(sub => {
+      const bookedCall = this.getBookingForExact15MinSlot(dateObj, sub.startMins, sub.endMins);
+      if (bookedCall) {
+        bookedCount++;
+        return `
+          <div class="sub-slot-item booked" onclick="app.closeSlotBreakdownModal(); app.openDetailSheet('${bookedCall.id}');" title="Click to view call record">
+            <span class="sub-slot-time"><i data-lucide="clock" style="width:12px; height:12px; margin-right:4px;"></i> ${sub.label}</span>
+            <div class="sub-slot-details">
+              <strong>${bookedCall.caller_full_name}</strong>
+              <span style="font-size:0.75rem; color:var(--text-secondary);">[${bookedCall.vehicle_registration || 'N/A'}] • ${bookedCall.service_requested || 'Assessment'}</span>
+            </div>
+            <span class="status-pill blue">Booked</span>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="sub-slot-item available">
+            <span class="sub-slot-time"><i data-lucide="clock" style="width:12px; height:12px; margin-right:4px;"></i> ${sub.label}</span>
+            <div class="sub-slot-details">
+              <span style="color:var(--text-secondary);">15-min Available Inspection Slot</span>
+            </div>
+            <span class="status-pill green">Open Slot</span>
+          </div>
+        `;
+      }
+    }).join('');
+
+    if (badge) badge.textContent = `${bookedCount}/${subSlots.length} Booked`;
+
+    if (backdrop) backdrop.classList.add('active');
+    modal.style.display = 'block';
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  closeSlotBreakdownModal() {
+    const modal = document.getElementById('slotBreakdownModal');
+    const backdrop = document.getElementById('slotModalBackdrop');
+    if (modal) modal.style.display = 'none';
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
+  // =========================================================================
+  // CALENDAR CONTROLLER: DAY VIEW & SMOOTH FULL WEEK VIEW (Change 7.1)
+  // =========================================================================
+  renderCalendar() {
+    const dayContainer = document.getElementById('calendarDayViewContainer');
+    const weekContainer = document.getElementById('calendarWeekViewContainer');
+
+    if (this.calendarViewMode === 'day') {
+      if (dayContainer) dayContainer.style.display = 'grid';
+      if (weekContainer) weekContainer.style.display = 'none';
+      this.renderDayCalendar();
+    } else {
+      if (dayContainer) dayContainer.style.display = 'none';
+      if (weekContainer) weekContainer.style.display = 'flex';
+      this.renderWeekCalendar();
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
   renderDayCalendar() {
     const titleEl = document.getElementById('currentCalDateTitle');
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
@@ -784,36 +980,77 @@ class HibiscusCRM {
       timeSlots = ['07:30 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '04:30 PM', '05:00 PM'];
     }
 
-    slotsList.innerHTML = timeSlots.map(time => {
-      const bookedCall = this.getBookingForSlot(this.selectedDate, time);
+    slotsList.innerHTML = timeSlots.map((time, idx) => {
+      const subSlots = this.get15MinSubSlots(time);
+      const bookedSubSlots = subSlots.map(sub => ({
+        sub,
+        call: this.getBookingForExact15MinSlot(this.selectedDate, sub.startMins, sub.endMins)
+      }));
 
-      if (bookedCall) {
-        return `
-          <div class="slot-row booked" onclick="app.openDetailSheet('${bookedCall.id}')" style="cursor:pointer;" title="Click to view details">
-            <div class="slot-time">${time}</div>
-            <div class="slot-info">
-              <div class="slot-title">${bookedCall.caller_full_name} <span style="color:#FFFFFF;">[${bookedCall.vehicle_registration || 'N/A'}]</span></div>
-              <div class="slot-sub">${bookedCall.service_requested || 'Visual Assessment'} • Booked via AI Receptionist</div>
-            </div>
-            <div>
-              <span class="status-pill blue">Google Cal Booked</span>
-            </div>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="slot-row available">
-            <div class="slot-time">${time}</div>
-            <div class="slot-info">
-              <div class="slot-title" style="color:var(--text-secondary);">Available 15-min Inspection Slot</div>
-              <div class="slot-sub">681 Whangaparaoa Road • Walk-ins & Agent Bookings Ready</div>
-            </div>
-            <div>
-              <span class="status-pill green">Open Slot</span>
-            </div>
-          </div>
-        `;
+      const bookedCount = bookedSubSlots.filter(s => s.call).length;
+      const isFullyBooked = bookedCount === subSlots.length && subSlots.length > 0;
+
+      let rowClass = 'available';
+      let statusBadge = `<span class="status-pill green">${subSlots.length}/${subSlots.length} Open Slots</span>`;
+      let slotTitle = `Available 15-min Inspection Slots`;
+      let slotSub = `681 Whangaparaoa Road • Click to view 15-min slots`;
+
+      if (isFullyBooked) {
+        rowClass = 'fully-booked';
+        statusBadge = `<span class="status-pill red" style="background:rgba(255,69,58,0.18); color:#ff453a; border:1px solid rgba(255,69,58,0.3);">Booked</span>`;
+        slotTitle = `Hourly Slot Fully Booked`;
+        slotSub = `All ${subSlots.length} 15-minute inspection slots booked • Click to view breakdown`;
+      } else if (bookedCount > 0) {
+        rowClass = 'booked';
+        statusBadge = `<span class="status-pill blue">${bookedCount}/${subSlots.length} Booked</span>`;
+        const names = bookedSubSlots.filter(s => s.call).map(s => s.call.caller_full_name).join(', ');
+        slotTitle = `Booked: ${names}`;
+        slotSub = `${subSlots.length - bookedCount} of ${subSlots.length} slots available • Click to view 15-min slots`;
       }
+
+      return `
+        <div class="slot-row ${rowClass}" style="flex-direction:column; align-items:stretch; cursor:pointer;" onclick="app.toggleDaySlotAccordion(${idx})">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <div class="slot-time">${time}</div>
+            <div class="slot-info">
+              <div class="slot-title">${slotTitle}</div>
+              <div class="slot-sub">${slotSub}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${statusBadge}
+              <i data-lucide="chevron-down" id="chevron-icon-${idx}" style="width:16px; height:16px; color:var(--text-secondary); transition:transform 0.2s ease;"></i>
+            </div>
+          </div>
+
+          <!-- Expanded 15-Min Slots Breakdown -->
+          <div class="sub-slots-wrapper" id="sub-slots-${idx}" style="display: ${bookedCount > 0 ? 'flex' : 'none'};">
+            ${bookedSubSlots.map(({ sub, call }) => {
+              if (call) {
+                return `
+                  <div class="sub-slot-item booked" onclick="event.stopPropagation(); app.openDetailSheet('${call.id}')" title="Click to view record">
+                    <span class="sub-slot-time"><i data-lucide="clock" style="width:12px; height:12px; margin-right:4px;"></i> ${sub.label}</span>
+                    <div class="sub-slot-details">
+                      <strong>${call.caller_full_name}</strong>
+                      <span style="font-size:0.75rem; color:var(--text-secondary);">[${call.vehicle_registration || 'N/A'}] • ${call.service_requested || 'Assessment'}</span>
+                    </div>
+                    <span class="status-pill blue">Booked</span>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="sub-slot-item available" onclick="event.stopPropagation();">
+                    <span class="sub-slot-time"><i data-lucide="clock" style="width:12px; height:12px; margin-right:4px;"></i> ${sub.label}</span>
+                    <div class="sub-slot-details">
+                      <span style="color:var(--text-secondary);">15-min Available Inspection Slot</span>
+                    </div>
+                    <span class="status-pill green">Open Slot</span>
+                  </div>
+                `;
+              }
+            }).join('')}
+          </div>
+        </div>
+      `;
     }).join('');
   }
 
@@ -841,7 +1078,7 @@ class HibiscusCRM {
 
     // Update Day Column Headers
     const dayIds = ['wh-mon', 'wh-tue', 'wh-wed', 'wh-thu', 'wh-fri', 'wh-sat'];
-    const todayStr = this.formatDateKey(new Date(2026, 7, 14)); // 2026-08-14
+    const todayStr = this.formatDateKey(new Date());
 
     weekDays.forEach((d, idx) => {
       const el = document.getElementById(dayIds[idx]);
@@ -865,6 +1102,8 @@ class HibiscusCRM {
     ];
 
     weekBody.innerHTML = hours.map(hour => {
+      const subSlots = this.get15MinSubSlots(hour);
+
       return `
         <div class="week-time-row">
           <div class="week-row-label">${hour}</div>
@@ -875,19 +1114,34 @@ class HibiscusCRM {
               return `<div class="week-slot-cell closed" style="opacity: 0.35; background: rgba(0,0,0,0.2);"><span>Closed</span></div>`;
             }
 
-            const bookedCall = this.getBookingForSlot(d, hour);
+            const bookedSubSlots = subSlots.map(sub => ({
+              sub,
+              call: this.getBookingForExact15MinSlot(d, sub.startMins, sub.endMins)
+            }));
+            const bookedCount = bookedSubSlots.filter(s => s.call).length;
+            const isFullyBooked = bookedCount === subSlots.length && subSlots.length > 0;
 
-            if (bookedCall) {
+            const dateIso = d.toISOString();
+
+            if (isFullyBooked) {
               return `
-                <div class="week-slot-cell booked" onclick="app.openDetailSheet('${bookedCall.id}')" style="cursor:pointer;" title="${bookedCall.caller_full_name} - ${bookedCall.service_requested}">
-                  <strong>${bookedCall.caller_full_name}</strong>
-                  <span>${bookedCall.vehicle_registration || 'QPW438'} (${bookedCall.service_requested})</span>
+                <div class="week-slot-cell fully-booked" onclick="app.openSlotBreakdownModal('${dateIso}', '${hour}')" style="cursor:pointer; background:rgba(255,69,58,0.14); border:1px solid rgba(255,69,58,0.35);" title="Click to view 15-min slots">
+                  <strong style="color:#ff453a;">Booked</strong>
+                  <span style="font-size:0.7rem; color:var(--text-secondary);">4/4 Booked</span>
+                </div>
+              `;
+            } else if (bookedCount > 0) {
+              const firstCall = bookedSubSlots.find(s => s.call).call;
+              return `
+                <div class="week-slot-cell booked" onclick="app.openSlotBreakdownModal('${dateIso}', '${hour}')" style="cursor:pointer;" title="Click to view 15-min slots">
+                  <strong>${firstCall.caller_full_name}</strong>
+                  <span>${bookedCount}/${subSlots.length} Booked • View 15m</span>
                 </div>
               `;
             } else {
               return `
-                <div class="week-slot-cell">
-                  <span style="color:var(--text-tertiary);">Open</span>
+                <div class="week-slot-cell" onclick="app.openSlotBreakdownModal('${dateIso}', '${hour}')" style="cursor:pointer;" title="Click to view 15-min slots">
+                  <span style="color:var(--text-tertiary);">${subSlots.length}/${subSlots.length} Open</span>
                 </div>
               `;
             }
