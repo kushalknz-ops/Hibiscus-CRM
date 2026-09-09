@@ -195,6 +195,14 @@
             <div class="separated-jobs-grid" id="separatedJobsContainer">
               <!-- Rendered via JS based on extracted service_requested -->
             </div>
+
+            <!-- Show More Action Button (Right After 4th Row) -->
+            <div class="separation-show-more-wrap" id="separationShowMoreWrap" style="display: none;">
+              <button class="show-more-jobs-btn" id="showMoreJobsBtn" onclick="app.showMoreSeparatedJobs()">
+                <span>Show More</span>
+                <i data-lucide="chevron-down"></i>
+              </button>
+            </div>
           </div>
 
           <!-- 2-Column Layout: Recent Inbound Calls & Today's Schedule -->

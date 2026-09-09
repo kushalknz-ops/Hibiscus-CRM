@@ -29,6 +29,10 @@ class HibiscusCRM {
     this.userRole = 'director';
     this.inactivityTimer = null;
 
+    // Service Separation Hub pagination state (4 rows initially, expandable by 4 rows)
+    this.separationHubVisibleRows = 4;
+    this._cachedSeparationCols = 4;
+
     this.init();
   }
 
@@ -135,8 +139,21 @@ class HibiscusCRM {
         document.querySelectorAll('#serviceCategoryTabs .sep-tab-btn').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         this.activeServiceFilter = tab.getAttribute('data-service');
+        this.separationHubVisibleRows = 4; // Reset to initial 4 rows on category tab change
         this.renderSeparatedServiceJobs();
       });
+    });
+
+    // Window Resize listener to adjust grid pagination
+    window.addEventListener('resize', () => {
+      if (this._resizeTimeout) clearTimeout(this._resizeTimeout);
+      this._resizeTimeout = setTimeout(() => {
+        const newCols = this.getSeparationGridColumnCount();
+        if (newCols !== this._cachedSeparationCols) {
+          this._cachedSeparationCols = newCols;
+          this.renderSeparatedServiceJobs();
+        }
+      }, 150);
     });
 
     // Call Log Filters
@@ -415,9 +432,100 @@ class HibiscusCRM {
     }
   }
 
+  // Helper to determine exact number of columns per row currently rendered in the separation grid
+  getSeparationGridColumnCount() {
+    const container = document.getElementById('separatedJobsContainer');
+    if (!container) return 4;
+
+    // Method 1: Check existing rendered cards' offsetTop to find how many fit in the first row
+    const cards = container.querySelectorAll('.job-card');
+    if (cards.length > 1) {
+      const firstTop = cards[0].offsetTop;
+      let count = 0;
+      for (let i = 0; i < cards.length; i++) {
+        if (Math.abs(cards[i].offsetTop - firstTop) < 6) {
+          count++;
+        } else {
+          break;
+        }
+      }
+      if (count > 0) {
+        this._cachedSeparationCols = count;
+        return count;
+      }
+    }
+
+    // Method 2: Check computed grid-template-columns
+    try {
+      const computed = window.getComputedStyle(container);
+      const cols = computed.getPropertyValue('grid-template-columns');
+      if (cols && cols !== 'none' && !cols.includes('repeat')) {
+        const parts = cols.trim().split(/\s+/).filter(Boolean);
+        if (parts.length > 0) {
+          this._cachedSeparationCols = parts.length;
+          return parts.length;
+        }
+      }
+    } catch (e) {}
+
+    // Method 3: Fallback calculation from width (card min 320px + gap 14px)
+    const width = container.clientWidth || (window.innerWidth ? Math.max(320, window.innerWidth - 64) : 1300);
+    const calculatedCols = Math.floor((width + 14) / 334);
+    const result = Math.max(1, calculatedCols || (this._cachedSeparationCols || 4));
+    this._cachedSeparationCols = result;
+    return result;
+  }
+
+  // Handle "Show More" button click - expands by 4 more rows
+  showMoreSeparatedJobs() {
+    this.separationHubVisibleRows += 4;
+    this.renderSeparatedServiceJobs();
+  }
+
+  // Render individual service job card HTML
+  renderJobCardHtml(c) {
+    const cat = this.categorizeService(c.service_requested, c);
+    const catLabels = {
+      wof: 'WOF Rust Repair (UC-06)',
+      insurance: 'Insurance Claim Job (UC-01)',
+      private: 'Private Quote (UC-02)',
+      courtesy: 'Courtesy Car Request (UC-03)',
+      status: 'Workshop Status (UC-04)',
+      detailing: 'Valet Detailing (UC-05)',
+      spam: 'Spam / Out-of-Scope (UC-07)',
+      other: 'General Inquiry'
+    };
+
+    return `
+      <div class="job-card" onclick="app.openDetailSheet('${c.id}')">
+        <div class="job-card-top">
+          <span class="job-service-tag ${cat}">${catLabels[cat] || c.service_requested}</span>
+          <span class="job-time">${c.display_time || c.time_of_call}</span>
+        </div>
+
+        <div class="job-customer-row">
+          <span class="job-customer-name">${c.caller_full_name}</span>
+          <span class="job-rego">${c.vehicle_registration || 'N/A'}</span>
+        </div>
+
+        <div class="job-details-snippet">
+          ${c.vehicle_make_model_year && c.vehicle_make_model_year !== 'Not provided' ? `<strong>Vehicle:</strong> ${c.vehicle_make_model_year}<br/>` : ''}
+          <strong>Preferred Slot:</strong> ${c.preferred_date_time || 'Not specified'}<br/>
+          ${c.insurance_company !== 'Not provided' ? `<strong>Insurer:</strong> ${c.insurance_company}` : `<strong>Urgency:</strong> ${c.urgency_level || 'Normal'}`}
+        </div>
+
+        <div class="job-footer">
+          <span class="job-phone">${c.contact_phone_number}</span>
+          <span class="job-action-link">Listen Audio & Details <i data-lucide="arrow-right" style="width:12px; height:12px;"></i></span>
+        </div>
+      </div>
+    `;
+  }
+
   // Renders the Automated Call Service Separation Section on Dashboard
   renderSeparatedServiceJobs() {
     const container = document.getElementById('separatedJobsContainer');
+    const showMoreWrap = document.getElementById('separationShowMoreWrap');
     if (!container) return;
 
     let filtered = [...this.calls];
@@ -432,48 +540,42 @@ class HibiscusCRM {
           <p>No callers found in this service category.</p>
         </div>
       `;
+      if (showMoreWrap) showMoreWrap.style.display = 'none';
       if (window.lucide) window.lucide.createIcons();
       return;
     }
 
-    container.innerHTML = filtered.map(c => {
-      const cat = this.categorizeService(c.service_requested, c);
-      const catLabels = {
-        wof: 'WOF Rust Repair (UC-06)',
-        insurance: 'Insurance Claim Job (UC-01)',
-        private: 'Private Quote (UC-02)',
-        courtesy: 'Courtesy Car Request (UC-03)',
-        status: 'Workshop Status (UC-04)',
-        detailing: 'Valet Detailing (UC-05)',
-        spam: 'Spam / Out-of-Scope (UC-07)',
-        other: 'General Inquiry'
-      };
+    const cols = this.getSeparationGridColumnCount();
+    const maxVisible = this.separationHubVisibleRows * cols;
+    const visibleCalls = filtered.slice(0, maxVisible);
 
-      return `
-        <div class="job-card" onclick="app.openDetailSheet('${c.id}')">
-          <div class="job-card-top">
-            <span class="job-service-tag ${cat}">${catLabels[cat] || c.service_requested}</span>
-            <span class="job-time">${c.display_time || c.time_of_call}</span>
-          </div>
+    container.innerHTML = visibleCalls.map(c => this.renderJobCardHtml(c)).join('');
 
-          <div class="job-customer-row">
-            <span class="job-customer-name">${c.caller_full_name}</span>
-            <span class="job-rego">${c.vehicle_registration || 'N/A'}</span>
-          </div>
+    // After cards are rendered into DOM, verify if actual column count matches estimation
+    const actualCols = this.getSeparationGridColumnCount();
+    if (actualCols !== cols) {
+      const correctMaxVisible = this.separationHubVisibleRows * actualCols;
+      if (correctMaxVisible !== maxVisible) {
+        const correctedCalls = filtered.slice(0, correctMaxVisible);
+        container.innerHTML = correctedCalls.map(c => this.renderJobCardHtml(c)).join('');
+      }
+    }
 
-          <div class="job-details-snippet">
-            ${c.vehicle_make_model_year && c.vehicle_make_model_year !== 'Not provided' ? `<strong>Vehicle:</strong> ${c.vehicle_make_model_year}<br/>` : ''}
-            <strong>Preferred Slot:</strong> ${c.preferred_date_time || 'Not specified'}<br/>
-            ${c.insurance_company !== 'Not provided' ? `<strong>Insurer:</strong> ${c.insurance_company}` : `<strong>Urgency:</strong> ${c.urgency_level || 'Normal'}`}
-          </div>
-
-          <div class="job-footer">
-            <span class="job-phone">${c.contact_phone_number}</span>
-            <span class="job-action-link">Listen Audio & Details <i data-lucide="arrow-right" style="width:12px; height:12px;"></i></span>
-          </div>
-        </div>
-      `;
-    }).join('');
+    // Manage "Show More" button visibility
+    // Visible only if more calls remain beyond the visible rows
+    if (showMoreWrap) {
+      const effectiveCols = this._cachedSeparationCols || cols;
+      const effectiveMaxVisible = this.separationHubVisibleRows * effectiveCols;
+      if (filtered.length > effectiveMaxVisible) {
+        showMoreWrap.style.display = 'flex';
+        const showMoreBtn = document.getElementById('showMoreJobsBtn');
+        if (showMoreBtn) {
+          showMoreBtn.innerHTML = `<span>Show More</span> <i data-lucide="chevron-down" style="width:16px; height:16px;"></i>`;
+        }
+      } else {
+        showMoreWrap.style.display = 'none';
+      }
+    }
 
     if (window.lucide) window.lucide.createIcons();
   }
