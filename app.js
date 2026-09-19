@@ -420,15 +420,23 @@ class HibiscusCRM {
     if (badgeAppts) badgeAppts.textContent = booked;
 
     // Service category tab counters
-    const counts = { all: total, wof: 0, insurance: 0, private: 0, courtesy: 0, status: 0, detailing: 0, spam: 0 };
+    const counts = { all: total, wof: 0, insurance: 0, private: 0, courtesy: 0, status: 0, detailing: 0, spam: 0, others: 0 };
     this.calls.forEach(c => {
       const cat = this.categorizeService(c.service_requested, c);
-      if (counts[cat] !== undefined) counts[cat]++;
+      if (counts[cat] !== undefined) {
+        counts[cat]++;
+      } else if (cat === 'other') {
+        counts.others++;
+      }
     });
 
     for (const [cat, count] of Object.entries(counts)) {
       const countEl = document.getElementById(`count-${cat}-services`);
       if (countEl) countEl.textContent = count;
+      if (cat === 'others') {
+        const countOtherEl = document.getElementById('count-other-services');
+        if (countOtherEl) countOtherEl.textContent = count;
+      }
     }
   }
 
@@ -493,7 +501,8 @@ class HibiscusCRM {
       status: 'Workshop Status (UC-04)',
       detailing: 'Valet Detailing (UC-05)',
       spam: 'Spam / Out-of-Scope (UC-07)',
-      other: 'General Inquiry'
+      other: 'Others / General Inquiry',
+      others: 'Others / General Inquiry'
     };
 
     return `
@@ -530,7 +539,13 @@ class HibiscusCRM {
 
     let filtered = [...this.calls];
     if (this.activeServiceFilter !== 'all') {
-      filtered = filtered.filter(c => this.categorizeService(c.service_requested, c) === this.activeServiceFilter);
+      filtered = filtered.filter(c => {
+        const cat = this.categorizeService(c.service_requested, c);
+        if (this.activeServiceFilter === 'others' || this.activeServiceFilter === 'other') {
+          return cat === 'others' || cat === 'other';
+        }
+        return cat === this.activeServiceFilter;
+      });
     }
 
     if (filtered.length === 0) {

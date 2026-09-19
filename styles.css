@@ -1043,6 +1043,7 @@ input[type="button"]:active {
 .job-service-tag.status { background: var(--accent-green-subtle); color: var(--accent-green); }
 .job-service-tag.detailing { background: rgba(255, 105, 180, 0.15); color: #ff69b4; }
 .job-service-tag.spam { background: var(--accent-red-subtle); color: var(--accent-red); }
+.job-service-tag.other, .job-service-tag.others { background: rgba(142, 142, 147, 0.18); color: #c7c7cc; }
 
 .job-time {
   font-size: 0.72rem;
